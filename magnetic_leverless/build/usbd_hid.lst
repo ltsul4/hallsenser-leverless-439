@@ -1,0 +1,817 @@
+ARM GAS  C:\Users\naoki\AppData\Local\Temp\ccKWt9uD.s 			page 1
+
+
+   1              		.cpu cortex-m4
+   2              		.arch armv7e-m
+   3              		.fpu fpv4-sp-d16
+   4              		.eabi_attribute 27, 1
+   5              		.eabi_attribute 28, 1
+   6              		.eabi_attribute 20, 1
+   7              		.eabi_attribute 21, 1
+   8              		.eabi_attribute 23, 3
+   9              		.eabi_attribute 24, 1
+  10              		.eabi_attribute 25, 1
+  11              		.eabi_attribute 26, 1
+  12              		.eabi_attribute 30, 1
+  13              		.eabi_attribute 34, 1
+  14              		.eabi_attribute 18, 4
+  15              		.file	"usbd_hid.c"
+  16              		.text
+  17              	.Ltext0:
+  18              		.cfi_sections	.debug_frame
+  19              		.file 1 "Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c"
+  20              		.section	.text.USBD_HID_GetCfgDesc,"ax",%progbits
+  21              		.align	1
+  22              		.syntax unified
+  23              		.thumb
+  24              		.thumb_func
+  26              	USBD_HID_GetCfgDesc:
+  27              	.LVL0:
+  28              	.LFB136:
+   1:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c **** /* usbd_hid.c */
+   2:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c **** #include "usbd_hid.h"
+   3:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c **** #include "usbd_ctlreq.h"
+   4:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c **** #include "usbd_core.h"
+   5:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c **** #include "main.h"
+   6:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c **** 
+   7:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c **** extern void WebHID_DataReceived_Callback(uint8_t* data, uint32_t len);
+   8:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c **** uint8_t WebHID_RxBuffer[64]; 
+   9:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c **** 
+  10:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c **** static uint8_t USBD_HID_Init(USBD_HandleTypeDef *pdev, uint8_t cfgidx);
+  11:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c **** static uint8_t USBD_HID_DeInit(USBD_HandleTypeDef *pdev, uint8_t cfgidx);
+  12:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c **** static uint8_t USBD_HID_Setup(USBD_HandleTypeDef *pdev, USBD_SetupReqTypedef *req);
+  13:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c **** static uint8_t *USBD_HID_GetCfgDesc(uint16_t *length);
+  14:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c **** static uint8_t USBD_HID_DataIn(USBD_HandleTypeDef *pdev, uint8_t epnum);
+  15:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c **** static uint8_t USBD_HID_DataOut(USBD_HandleTypeDef *pdev, uint8_t epnum); // ★追加
+  16:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c **** 
+  17:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c **** // クラス構造体に DataOut を登録 (これが重要！)
+  18:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c **** USBD_ClassTypeDef USBD_HID = {
+  19:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c ****     USBD_HID_Init,
+  20:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c ****     USBD_HID_DeInit,
+  21:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c ****     USBD_HID_Setup,
+  22:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c ****     NULL, /* EP0_TxSent */
+  23:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c ****     NULL, /* EP0_RxReady */
+  24:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c ****     USBD_HID_DataIn,
+  25:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c ****     USBD_HID_DataOut, // ★ここに追加
+  26:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c ****     NULL, /* SOF */
+  27:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c ****     NULL,
+  28:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c ****     NULL,
+  29:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c ****     USBD_HID_GetCfgDesc,
+  30:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c ****     USBD_HID_GetCfgDesc,
+ARM GAS  C:\Users\naoki\AppData\Local\Temp\ccKWt9uD.s 			page 2
+
+
+  31:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c ****     USBD_HID_GetCfgDesc,
+  32:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c ****     NULL,
+  33:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c **** };
+  34:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c **** 
+  35:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c **** // --- レポート記述子 (Config Mode用) ---
+  36:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c **** __ALIGN_BEGIN static uint8_t HID_ReportDesc_Config[] __ALIGN_END = {
+  37:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c ****     0x06, 0x60, 0xFF, // Usage Page (Vendor Specific)
+  38:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c ****     0x09, 0x01,       // Usage (Vendor Usage 1)
+  39:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c ****     0xA1, 0x01,       // Collection (Application)
+  40:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c ****     
+  41:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c ****     // Input (Device -> PC) [EP1 IN]
+  42:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c ****     0x09, 0x01, 0x15, 0x00, 0x26, 0xFF, 0x00, 0x75, 0x08, 0x95, 0x40, 0x81, 0x02, 
+  43:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c ****     
+  44:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c ****     // Output (PC -> Device) [EP2 OUT] ★Feature(0xB1)からOutput(0x91)に変更
+  45:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c ****     0x09, 0x01, 0x15, 0x00, 0x26, 0xFF, 0x00, 0x75, 0x08, 0x95, 0x40, 0x91, 0x02, 
+  46:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c ****     
+  47:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c ****     0xC0              // End Collection
+  48:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c **** };
+  49:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c **** 
+  50:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c **** // --- 構成記述子 (Config Mode用) ---
+  51:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c **** #define CONFIG_DESC_SIZE_WEB 41
+  52:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c **** __ALIGN_BEGIN static uint8_t USBD_HID_CfgDesc_Web[CONFIG_DESC_SIZE_WEB] __ALIGN_END = {
+  53:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c ****     0x09, 0x02, CONFIG_DESC_SIZE_WEB, 0x00, 0x01, 0x01, 0x00, 0xC0, 0x32,
+  54:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c ****     // Interface 0: WebHID (Generic HID)
+  55:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c ****     0x09, 0x04, 0x00, 0x00, 0x02, 0x03, 0x00, 0x00, 0x00, 
+  56:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c ****     0x09, 0x21, 0x11, 0x01, 0x00, 0x01, 0x22, sizeof(HID_ReportDesc_Config), 0x00,
+  57:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c ****     0x07, 0x05, 0x81, 0x03, 0x40, 0x00, 0x01, // EP1 IN (64 bytes)
+  58:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c ****     0x07, 0x05, 0x02, 0x03, 0x40, 0x00, 0x01  // EP2 OUT (64 bytes)
+  59:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c **** };
+  60:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c **** 
+  61:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c **** // --- 構成記述子 (Xbox Mode用) ---
+  62:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c **** #define CONFIG_DESC_SIZE_XBOX 48
+  63:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c **** __ALIGN_BEGIN static uint8_t USBD_HID_CfgDesc_Xbox[CONFIG_DESC_SIZE_XBOX] __ALIGN_END = {
+  64:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c ****     0x09, 0x02, CONFIG_DESC_SIZE_XBOX, 0x00, 0x01, 0x01, 0x00, 0xA0, 0xFA, 
+  65:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c ****     0x09, 0x04, 0x00, 0x00, 0x02, 0xFF, 0x5D, 0x01, 0x00, 
+  66:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c ****     0x10, 0x21, 0x10, 0x01, 0x01, 0x24, 0x81, 0x14, 0x03, 0x00, 0x03, 0x13, 0x02, 0x00, 0x03, 0x00,
+  67:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c ****     0x07, 0x05, 0x81, 0x03, 0x20, 0x00, 0x01, 
+  68:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c ****     0x07, 0x05, 0x02, 0x03, 0x20, 0x00, 0x08  
+  69:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c **** };
+  70:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c **** 
+  71:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c **** static uint8_t USBD_HID_Init(USBD_HandleTypeDef *pdev, uint8_t cfgidx) {
+  72:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c ****     uint16_t mps = (g_boot_mode == 0) ? 32 : 64;
+  73:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c **** 
+  74:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c ****     USBD_LL_OpenEP(pdev, 0x81, USBD_EP_TYPE_INTR, mps);
+  75:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c ****     USBD_LL_OpenEP(pdev, 0x02, USBD_EP_TYPE_INTR, mps);
+  76:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c **** 
+  77:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c ****     pdev->pClassData = USBD_malloc(sizeof(USBD_HID_HandleTypeDef));
+  78:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c **** 
+  79:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c ****     // ★重要: Config Modeなら、すぐに受信待ち状態にする
+  80:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c ****     if (g_boot_mode == 1) {
+  81:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c ****         USBD_LL_PrepareReceive(pdev, 0x02, WebHID_RxBuffer, 64);
+  82:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c ****     }
+  83:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c **** 
+  84:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c ****     return USBD_OK;
+  85:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c **** }
+  86:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c **** 
+  87:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c **** static uint8_t USBD_HID_DeInit(USBD_HandleTypeDef *pdev, uint8_t cfgidx) {
+ARM GAS  C:\Users\naoki\AppData\Local\Temp\ccKWt9uD.s 			page 3
+
+
+  88:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c ****     USBD_LL_CloseEP(pdev, 0x81); 
+  89:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c ****     USBD_LL_CloseEP(pdev, 0x02);
+  90:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c ****     if(pdev->pClassData != NULL) USBD_free(pdev->pClassData);
+  91:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c ****     return USBD_OK;
+  92:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c **** }
+  93:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c **** 
+  94:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c **** static uint8_t USBD_HID_Setup(USBD_HandleTypeDef *pdev, USBD_SetupReqTypedef *req) {
+  95:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c ****     uint16_t len = 0; uint8_t *pbuf = NULL;
+  96:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c ****     switch (req->bmRequest & USB_REQ_TYPE_MASK) {
+  97:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c ****         case USB_REQ_TYPE_STANDARD:
+  98:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c ****             if (req->bRequest == USB_REQ_GET_DESCRIPTOR) {
+  99:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c ****                 if (g_boot_mode == 1 && (req->wValue >> 8) == 0x22) {
+ 100:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c ****                     pbuf = HID_ReportDesc_Config;
+ 101:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c ****                     len = sizeof(HID_ReportDesc_Config);
+ 102:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c ****                 }
+ 103:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c ****             }
+ 104:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c ****             break;
+ 105:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c ****     }
+ 106:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c ****     if (len > 0) { len = MIN(len, req->wLength); USBD_CtlSendData(pdev, pbuf, len); }
+ 107:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c ****     return USBD_OK;
+ 108:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c **** }
+ 109:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c **** 
+ 110:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c **** static uint8_t *USBD_HID_GetCfgDesc(uint16_t *length) {
+  29              		.loc 1 110 55 view -0
+  30              		.cfi_startproc
+  31              		@ args = 0, pretend = 0, frame = 0
+  32              		@ frame_needed = 0, uses_anonymous_args = 0
+  33              		@ link register save eliminated.
+ 111:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c ****     if (g_boot_mode == 0) {
+  34              		.loc 1 111 5 view .LVU1
+  35              		.loc 1 111 21 is_stmt 0 view .LVU2
+  36 0000 054B     		ldr	r3, .L4
+  37 0002 1B78     		ldrb	r3, [r3]	@ zero_extendqisi2
+  38              		.loc 1 111 8 view .LVU3
+  39 0004 1BB9     		cbnz	r3, .L2
+ 112:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c ****         *length = sizeof(USBD_HID_CfgDesc_Xbox);
+  40              		.loc 1 112 9 is_stmt 1 view .LVU4
+  41              		.loc 1 112 17 is_stmt 0 view .LVU5
+  42 0006 3023     		movs	r3, #48
+  43 0008 0380     		strh	r3, [r0]	@ movhi
+ 113:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c ****         return USBD_HID_CfgDesc_Xbox;
+  44              		.loc 1 113 9 is_stmt 1 view .LVU6
+  45              		.loc 1 113 16 is_stmt 0 view .LVU7
+  46 000a 0448     		ldr	r0, .L4+4
+  47              	.LVL1:
+  48              		.loc 1 113 16 view .LVU8
+  49 000c 7047     		bx	lr
+  50              	.LVL2:
+  51              	.L2:
+ 114:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c ****     } else {
+ 115:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c ****         *length = sizeof(USBD_HID_CfgDesc_Web);
+  52              		.loc 1 115 9 is_stmt 1 view .LVU9
+  53              		.loc 1 115 17 is_stmt 0 view .LVU10
+  54 000e 2923     		movs	r3, #41
+  55 0010 0380     		strh	r3, [r0]	@ movhi
+ 116:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c ****         return USBD_HID_CfgDesc_Web;
+  56              		.loc 1 116 9 is_stmt 1 view .LVU11
+ARM GAS  C:\Users\naoki\AppData\Local\Temp\ccKWt9uD.s 			page 4
+
+
+  57              		.loc 1 116 16 is_stmt 0 view .LVU12
+  58 0012 0348     		ldr	r0, .L4+8
+  59              	.LVL3:
+ 117:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c ****     }
+ 118:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c **** }
+  60              		.loc 1 118 1 view .LVU13
+  61 0014 7047     		bx	lr
+  62              	.L5:
+  63 0016 00BF     		.align	2
+  64              	.L4:
+  65 0018 00000000 		.word	g_boot_mode
+  66 001c 00000000 		.word	USBD_HID_CfgDesc_Xbox
+  67 0020 00000000 		.word	USBD_HID_CfgDesc_Web
+  68              		.cfi_endproc
+  69              	.LFE136:
+  71              		.section	.text.USBD_HID_DataIn,"ax",%progbits
+  72              		.align	1
+  73              		.syntax unified
+  74              		.thumb
+  75              		.thumb_func
+  77              	USBD_HID_DataIn:
+  78              	.LVL4:
+  79              	.LFB138:
+ 119:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c **** 
+ 120:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c **** // ★追加: データ受信完了時に呼ばれる関数 (EP2 OUT)
+ 121:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c **** static uint8_t USBD_HID_DataOut(USBD_HandleTypeDef *pdev, uint8_t epnum) {
+ 122:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c ****     if (epnum == 0x02) {
+ 123:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c ****         // 受信したデータを処理
+ 124:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c ****         WebHID_DataReceived_Callback(WebHID_RxBuffer, 64);
+ 125:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c ****         
+ 126:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c ****         // 次のデータ受信に備える
+ 127:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c ****         USBD_LL_PrepareReceive(pdev, 0x02, WebHID_RxBuffer, 64);
+ 128:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c ****     }
+ 129:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c ****     return USBD_OK;
+ 130:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c **** }
+ 131:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c **** 
+ 132:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c **** static uint8_t USBD_HID_DataIn(USBD_HandleTypeDef *pdev, uint8_t epnum) {
+  80              		.loc 1 132 73 is_stmt 1 view -0
+  81              		.cfi_startproc
+  82              		@ args = 0, pretend = 0, frame = 0
+  83              		@ frame_needed = 0, uses_anonymous_args = 0
+  84              		@ link register save eliminated.
+ 133:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c ****     return USBD_OK;
+  85              		.loc 1 133 5 view .LVU15
+ 134:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c **** }
+  86              		.loc 1 134 1 is_stmt 0 view .LVU16
+  87 0000 0020     		movs	r0, #0
+  88              	.LVL5:
+  89              		.loc 1 134 1 view .LVU17
+  90 0002 7047     		bx	lr
+  91              		.cfi_endproc
+  92              	.LFE138:
+  94              		.section	.text.USBD_HID_DataOut,"ax",%progbits
+  95              		.align	1
+  96              		.syntax unified
+  97              		.thumb
+  98              		.thumb_func
+ARM GAS  C:\Users\naoki\AppData\Local\Temp\ccKWt9uD.s 			page 5
+
+
+ 100              	USBD_HID_DataOut:
+ 101              	.LVL6:
+ 102              	.LFB137:
+ 121:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c ****     if (epnum == 0x02) {
+ 103              		.loc 1 121 74 is_stmt 1 view -0
+ 104              		.cfi_startproc
+ 105              		@ args = 0, pretend = 0, frame = 0
+ 106              		@ frame_needed = 0, uses_anonymous_args = 0
+ 122:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c ****         // 受信したデータを処理
+ 107              		.loc 1 122 5 view .LVU19
+ 122:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c ****         // 受信したデータを処理
+ 108              		.loc 1 122 8 is_stmt 0 view .LVU20
+ 109 0000 0229     		cmp	r1, #2
+ 110 0002 01D0     		beq	.L13
+ 129:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c **** }
+ 111              		.loc 1 129 5 is_stmt 1 view .LVU21
+ 130:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c **** 
+ 112              		.loc 1 130 1 is_stmt 0 view .LVU22
+ 113 0004 0020     		movs	r0, #0
+ 114              	.LVL7:
+ 130:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c **** 
+ 115              		.loc 1 130 1 view .LVU23
+ 116 0006 7047     		bx	lr
+ 117              	.LVL8:
+ 118              	.L13:
+ 121:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c ****     if (epnum == 0x02) {
+ 119              		.loc 1 121 74 view .LVU24
+ 120 0008 10B5     		push	{r4, lr}
+ 121              	.LCFI0:
+ 122              		.cfi_def_cfa_offset 8
+ 123              		.cfi_offset 4, -8
+ 124              		.cfi_offset 14, -4
+ 125 000a 0446     		mov	r4, r0
+ 124:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c ****         
+ 126              		.loc 1 124 9 is_stmt 1 view .LVU25
+ 127 000c 4021     		movs	r1, #64
+ 128              	.LVL9:
+ 124:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c ****         
+ 129              		.loc 1 124 9 is_stmt 0 view .LVU26
+ 130 000e 0548     		ldr	r0, .L14
+ 131              	.LVL10:
+ 124:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c ****         
+ 132              		.loc 1 124 9 view .LVU27
+ 133 0010 FFF7FEFF 		bl	WebHID_DataReceived_Callback
+ 134              	.LVL11:
+ 127:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c ****     }
+ 135              		.loc 1 127 9 is_stmt 1 view .LVU28
+ 136 0014 4023     		movs	r3, #64
+ 137 0016 034A     		ldr	r2, .L14
+ 138 0018 0221     		movs	r1, #2
+ 139 001a 2046     		mov	r0, r4
+ 140 001c FFF7FEFF 		bl	USBD_LL_PrepareReceive
+ 141              	.LVL12:
+ 129:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c **** }
+ 142              		.loc 1 129 5 view .LVU29
+ 130:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c **** 
+ 143              		.loc 1 130 1 is_stmt 0 view .LVU30
+ARM GAS  C:\Users\naoki\AppData\Local\Temp\ccKWt9uD.s 			page 6
+
+
+ 144 0020 0020     		movs	r0, #0
+ 145 0022 10BD     		pop	{r4, pc}
+ 146              	.LVL13:
+ 147              	.L15:
+ 130:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c **** 
+ 148              		.loc 1 130 1 view .LVU31
+ 149              		.align	2
+ 150              	.L14:
+ 151 0024 00000000 		.word	WebHID_RxBuffer
+ 152              		.cfi_endproc
+ 153              	.LFE137:
+ 155              		.section	.text.USBD_HID_Setup,"ax",%progbits
+ 156              		.align	1
+ 157              		.syntax unified
+ 158              		.thumb
+ 159              		.thumb_func
+ 161              	USBD_HID_Setup:
+ 162              	.LVL14:
+ 163              	.LFB135:
+  94:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c ****     uint16_t len = 0; uint8_t *pbuf = NULL;
+ 164              		.loc 1 94 84 is_stmt 1 view -0
+ 165              		.cfi_startproc
+ 166              		@ args = 0, pretend = 0, frame = 0
+ 167              		@ frame_needed = 0, uses_anonymous_args = 0
+  94:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c ****     uint16_t len = 0; uint8_t *pbuf = NULL;
+ 168              		.loc 1 94 84 is_stmt 0 view .LVU33
+ 169 0000 08B5     		push	{r3, lr}
+ 170              	.LCFI1:
+ 171              		.cfi_def_cfa_offset 8
+ 172              		.cfi_offset 3, -8
+ 173              		.cfi_offset 14, -4
+  95:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c ****     switch (req->bmRequest & USB_REQ_TYPE_MASK) {
+ 174              		.loc 1 95 5 is_stmt 1 view .LVU34
+ 175              	.LVL15:
+  95:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c ****     switch (req->bmRequest & USB_REQ_TYPE_MASK) {
+ 176              		.loc 1 95 23 view .LVU35
+  96:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c ****         case USB_REQ_TYPE_STANDARD:
+ 177              		.loc 1 96 5 view .LVU36
+  96:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c ****         case USB_REQ_TYPE_STANDARD:
+ 178              		.loc 1 96 16 is_stmt 0 view .LVU37
+ 179 0002 0B78     		ldrb	r3, [r1]	@ zero_extendqisi2
+  96:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c ****         case USB_REQ_TYPE_STANDARD:
+ 180              		.loc 1 96 5 view .LVU38
+ 181 0004 13F0600F 		tst	r3, #96
+ 182 0008 02D1     		bne	.L17
+  98:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c ****                 if (g_boot_mode == 1 && (req->wValue >> 8) == 0x22) {
+ 183              		.loc 1 98 13 is_stmt 1 view .LVU39
+  98:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c ****                 if (g_boot_mode == 1 && (req->wValue >> 8) == 0x22) {
+ 184              		.loc 1 98 20 is_stmt 0 view .LVU40
+ 185 000a 4B78     		ldrb	r3, [r1, #1]	@ zero_extendqisi2
+  98:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c ****                 if (g_boot_mode == 1 && (req->wValue >> 8) == 0x22) {
+ 186              		.loc 1 98 16 view .LVU41
+ 187 000c 062B     		cmp	r3, #6
+ 188 000e 01D0     		beq	.L19
+ 189              	.LVL16:
+ 190              	.L17:
+ 107:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c **** }
+ARM GAS  C:\Users\naoki\AppData\Local\Temp\ccKWt9uD.s 			page 7
+
+
+ 191              		.loc 1 107 5 is_stmt 1 view .LVU42
+ 108:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c **** 
+ 192              		.loc 1 108 1 is_stmt 0 view .LVU43
+ 193 0010 0020     		movs	r0, #0
+ 194 0012 08BD     		pop	{r3, pc}
+ 195              	.LVL17:
+ 196              	.L19:
+  99:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c ****                     pbuf = HID_ReportDesc_Config;
+ 197              		.loc 1 99 17 is_stmt 1 view .LVU44
+  99:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c ****                     pbuf = HID_ReportDesc_Config;
+ 198              		.loc 1 99 33 is_stmt 0 view .LVU45
+ 199 0014 074B     		ldr	r3, .L20
+ 200 0016 1B78     		ldrb	r3, [r3]	@ zero_extendqisi2
+  99:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c ****                     pbuf = HID_ReportDesc_Config;
+ 201              		.loc 1 99 20 view .LVU46
+ 202 0018 012B     		cmp	r3, #1
+ 203 001a F9D1     		bne	.L17
+  99:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c ****                     pbuf = HID_ReportDesc_Config;
+ 204              		.loc 1 99 45 discriminator 1 view .LVU47
+ 205 001c 4B88     		ldrh	r3, [r1, #2]
+  99:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c ****                     pbuf = HID_ReportDesc_Config;
+ 206              		.loc 1 99 60 discriminator 1 view .LVU48
+ 207 001e 1B0A     		lsrs	r3, r3, #8
+  99:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c ****                     pbuf = HID_ReportDesc_Config;
+ 208              		.loc 1 99 38 discriminator 1 view .LVU49
+ 209 0020 222B     		cmp	r3, #34
+ 210 0022 F5D1     		bne	.L17
+ 100:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c ****                     len = sizeof(HID_ReportDesc_Config);
+ 211              		.loc 1 100 21 is_stmt 1 view .LVU50
+ 101:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c ****                 }
+ 212              		.loc 1 101 21 view .LVU51
+ 213              	.LVL18:
+ 106:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c ****     return USBD_OK;
+ 214              		.loc 1 106 5 view .LVU52
+ 106:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c ****     return USBD_OK;
+ 215              		.loc 1 106 20 discriminator 1 view .LVU53
+ 106:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c ****     return USBD_OK;
+ 216              		.loc 1 106 26 is_stmt 0 discriminator 1 view .LVU54
+ 217 0024 CA88     		ldrh	r2, [r1, #6]
+ 218              	.LVL19:
+ 106:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c ****     return USBD_OK;
+ 219              		.loc 1 106 50 is_stmt 1 view .LVU55
+ 106:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c ****     return USBD_OK;
+ 220              		.loc 1 106 50 is_stmt 0 discriminator 1 view .LVU56
+ 221 0026 222A     		cmp	r2, #34
+ 222 0028 28BF     		it	cs
+ 223 002a 2222     		movcs	r2, #34
+ 224              	.LVL20:
+ 106:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c ****     return USBD_OK;
+ 225              		.loc 1 106 50 discriminator 1 view .LVU57
+ 226 002c 0249     		ldr	r1, .L20+4
+ 227              	.LVL21:
+ 106:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c ****     return USBD_OK;
+ 228              		.loc 1 106 50 discriminator 1 view .LVU58
+ 229 002e FFF7FEFF 		bl	USBD_CtlSendData
+ 230              	.LVL22:
+ 106:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c ****     return USBD_OK;
+ARM GAS  C:\Users\naoki\AppData\Local\Temp\ccKWt9uD.s 			page 8
+
+
+ 231              		.loc 1 106 50 discriminator 1 view .LVU59
+ 232 0032 EDE7     		b	.L17
+ 233              	.L21:
+ 234              		.align	2
+ 235              	.L20:
+ 236 0034 00000000 		.word	g_boot_mode
+ 237 0038 00000000 		.word	HID_ReportDesc_Config
+ 238              		.cfi_endproc
+ 239              	.LFE135:
+ 241              		.section	.text.USBD_HID_DeInit,"ax",%progbits
+ 242              		.align	1
+ 243              		.syntax unified
+ 244              		.thumb
+ 245              		.thumb_func
+ 247              	USBD_HID_DeInit:
+ 248              	.LVL23:
+ 249              	.LFB134:
+  87:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c ****     USBD_LL_CloseEP(pdev, 0x81); 
+ 250              		.loc 1 87 74 is_stmt 1 view -0
+ 251              		.cfi_startproc
+ 252              		@ args = 0, pretend = 0, frame = 0
+ 253              		@ frame_needed = 0, uses_anonymous_args = 0
+  87:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c ****     USBD_LL_CloseEP(pdev, 0x81); 
+ 254              		.loc 1 87 74 is_stmt 0 view .LVU61
+ 255 0000 10B5     		push	{r4, lr}
+ 256              	.LCFI2:
+ 257              		.cfi_def_cfa_offset 8
+ 258              		.cfi_offset 4, -8
+ 259              		.cfi_offset 14, -4
+ 260 0002 0446     		mov	r4, r0
+  88:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c ****     USBD_LL_CloseEP(pdev, 0x02);
+ 261              		.loc 1 88 5 is_stmt 1 view .LVU62
+ 262 0004 8121     		movs	r1, #129
+ 263              	.LVL24:
+  88:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c ****     USBD_LL_CloseEP(pdev, 0x02);
+ 264              		.loc 1 88 5 is_stmt 0 view .LVU63
+ 265 0006 FFF7FEFF 		bl	USBD_LL_CloseEP
+ 266              	.LVL25:
+  89:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c ****     if(pdev->pClassData != NULL) USBD_free(pdev->pClassData);
+ 267              		.loc 1 89 5 is_stmt 1 view .LVU64
+ 268 000a 0221     		movs	r1, #2
+ 269 000c 2046     		mov	r0, r4
+ 270 000e FFF7FEFF 		bl	USBD_LL_CloseEP
+ 271              	.LVL26:
+  90:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c ****     return USBD_OK;
+ 272              		.loc 1 90 5 view .LVU65
+  90:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c ****     return USBD_OK;
+ 273              		.loc 1 90 12 is_stmt 0 view .LVU66
+ 274 0012 D4F8B802 		ldr	r0, [r4, #696]
+  90:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c ****     return USBD_OK;
+ 275              		.loc 1 90 7 view .LVU67
+ 276 0016 08B1     		cbz	r0, .L23
+  90:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c ****     return USBD_OK;
+ 277              		.loc 1 90 34 is_stmt 1 discriminator 1 view .LVU68
+ 278 0018 FFF7FEFF 		bl	USBD_static_free
+ 279              	.LVL27:
+ 280              	.L23:
+ARM GAS  C:\Users\naoki\AppData\Local\Temp\ccKWt9uD.s 			page 9
+
+
+  91:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c **** }
+ 281              		.loc 1 91 5 view .LVU69
+  92:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c **** 
+ 282              		.loc 1 92 1 is_stmt 0 view .LVU70
+ 283 001c 0020     		movs	r0, #0
+ 284 001e 10BD     		pop	{r4, pc}
+  92:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c **** 
+ 285              		.loc 1 92 1 view .LVU71
+ 286              		.cfi_endproc
+ 287              	.LFE134:
+ 289              		.section	.text.USBD_HID_Init,"ax",%progbits
+ 290              		.align	1
+ 291              		.syntax unified
+ 292              		.thumb
+ 293              		.thumb_func
+ 295              	USBD_HID_Init:
+ 296              	.LVL28:
+ 297              	.LFB133:
+  71:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c ****     uint16_t mps = (g_boot_mode == 0) ? 32 : 64;
+ 298              		.loc 1 71 72 is_stmt 1 view -0
+ 299              		.cfi_startproc
+ 300              		@ args = 0, pretend = 0, frame = 0
+ 301              		@ frame_needed = 0, uses_anonymous_args = 0
+  71:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c ****     uint16_t mps = (g_boot_mode == 0) ? 32 : 64;
+ 302              		.loc 1 71 72 is_stmt 0 view .LVU73
+ 303 0000 38B5     		push	{r3, r4, r5, lr}
+ 304              	.LCFI3:
+ 305              		.cfi_def_cfa_offset 16
+ 306              		.cfi_offset 3, -16
+ 307              		.cfi_offset 4, -12
+ 308              		.cfi_offset 5, -8
+ 309              		.cfi_offset 14, -4
+ 310 0002 0446     		mov	r4, r0
+  72:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c **** 
+ 311              		.loc 1 72 5 is_stmt 1 view .LVU74
+  72:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c **** 
+ 312              		.loc 1 72 33 is_stmt 0 view .LVU75
+ 313 0004 114B     		ldr	r3, .L31
+ 314 0006 1B78     		ldrb	r3, [r3]	@ zero_extendqisi2
+  72:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c **** 
+ 315              		.loc 1 72 14 view .LVU76
+ 316 0008 BBB9     		cbnz	r3, .L28
+  72:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c **** 
+ 317              		.loc 1 72 14 discriminator 1 view .LVU77
+ 318 000a 2025     		movs	r5, #32
+ 319              	.L26:
+ 320              	.LVL29:
+  74:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c ****     USBD_LL_OpenEP(pdev, 0x02, USBD_EP_TYPE_INTR, mps);
+ 321              		.loc 1 74 5 is_stmt 1 view .LVU78
+ 322 000c 2B46     		mov	r3, r5
+ 323 000e 0322     		movs	r2, #3
+ 324 0010 8121     		movs	r1, #129
+ 325              	.LVL30:
+  74:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c ****     USBD_LL_OpenEP(pdev, 0x02, USBD_EP_TYPE_INTR, mps);
+ 326              		.loc 1 74 5 is_stmt 0 view .LVU79
+ 327 0012 2046     		mov	r0, r4
+ 328              	.LVL31:
+ARM GAS  C:\Users\naoki\AppData\Local\Temp\ccKWt9uD.s 			page 10
+
+
+  74:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c ****     USBD_LL_OpenEP(pdev, 0x02, USBD_EP_TYPE_INTR, mps);
+ 329              		.loc 1 74 5 view .LVU80
+ 330 0014 FFF7FEFF 		bl	USBD_LL_OpenEP
+ 331              	.LVL32:
+  75:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c **** 
+ 332              		.loc 1 75 5 is_stmt 1 view .LVU81
+ 333 0018 2B46     		mov	r3, r5
+ 334 001a 0322     		movs	r2, #3
+ 335 001c 0221     		movs	r1, #2
+ 336 001e 2046     		mov	r0, r4
+ 337 0020 FFF7FEFF 		bl	USBD_LL_OpenEP
+ 338              	.LVL33:
+  77:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c **** 
+ 339              		.loc 1 77 5 view .LVU82
+  77:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c **** 
+ 340              		.loc 1 77 24 is_stmt 0 view .LVU83
+ 341 0024 1020     		movs	r0, #16
+ 342 0026 FFF7FEFF 		bl	USBD_static_malloc
+ 343              	.LVL34:
+  77:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c **** 
+ 344              		.loc 1 77 22 discriminator 1 view .LVU84
+ 345 002a C4F8B802 		str	r0, [r4, #696]
+  80:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c ****         USBD_LL_PrepareReceive(pdev, 0x02, WebHID_RxBuffer, 64);
+ 346              		.loc 1 80 5 is_stmt 1 view .LVU85
+  80:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c ****         USBD_LL_PrepareReceive(pdev, 0x02, WebHID_RxBuffer, 64);
+ 347              		.loc 1 80 21 is_stmt 0 view .LVU86
+ 348 002e 074B     		ldr	r3, .L31
+ 349 0030 1B78     		ldrb	r3, [r3]	@ zero_extendqisi2
+  80:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c ****         USBD_LL_PrepareReceive(pdev, 0x02, WebHID_RxBuffer, 64);
+ 350              		.loc 1 80 8 view .LVU87
+ 351 0032 012B     		cmp	r3, #1
+ 352 0034 03D0     		beq	.L30
+ 353              	.L27:
+  84:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c **** }
+ 354              		.loc 1 84 5 is_stmt 1 view .LVU88
+  85:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c **** 
+ 355              		.loc 1 85 1 is_stmt 0 view .LVU89
+ 356 0036 0020     		movs	r0, #0
+ 357 0038 38BD     		pop	{r3, r4, r5, pc}
+ 358              	.LVL35:
+ 359              	.L28:
+  72:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c **** 
+ 360              		.loc 1 72 14 discriminator 2 view .LVU90
+ 361 003a 4025     		movs	r5, #64
+ 362 003c E6E7     		b	.L26
+ 363              	.LVL36:
+ 364              	.L30:
+  81:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c ****     }
+ 365              		.loc 1 81 9 is_stmt 1 view .LVU91
+ 366 003e 4023     		movs	r3, #64
+ 367 0040 034A     		ldr	r2, .L31+4
+ 368 0042 0221     		movs	r1, #2
+ 369 0044 2046     		mov	r0, r4
+ 370 0046 FFF7FEFF 		bl	USBD_LL_PrepareReceive
+ 371              	.LVL37:
+ 372 004a F4E7     		b	.L27
+ 373              	.L32:
+ARM GAS  C:\Users\naoki\AppData\Local\Temp\ccKWt9uD.s 			page 11
+
+
+ 374              		.align	2
+ 375              	.L31:
+ 376 004c 00000000 		.word	g_boot_mode
+ 377 0050 00000000 		.word	WebHID_RxBuffer
+ 378              		.cfi_endproc
+ 379              	.LFE133:
+ 381              		.section	.text.USBD_HID_SendReport,"ax",%progbits
+ 382              		.align	1
+ 383              		.global	USBD_HID_SendReport
+ 384              		.syntax unified
+ 385              		.thumb
+ 386              		.thumb_func
+ 388              	USBD_HID_SendReport:
+ 389              	.LVL38:
+ 390              	.LFB139:
+ 135:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c **** 
+ 136:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c **** uint8_t USBD_HID_SendReport(USBD_HandleTypeDef *pdev, uint8_t *report, uint16_t len) {
+ 391              		.loc 1 136 86 view -0
+ 392              		.cfi_startproc
+ 393              		@ args = 0, pretend = 0, frame = 0
+ 394              		@ frame_needed = 0, uses_anonymous_args = 0
+ 395              		.loc 1 136 86 is_stmt 0 view .LVU93
+ 396 0000 08B5     		push	{r3, lr}
+ 397              	.LCFI4:
+ 398              		.cfi_def_cfa_offset 8
+ 399              		.cfi_offset 3, -8
+ 400              		.cfi_offset 14, -4
+ 401 0002 1346     		mov	r3, r2
+ 137:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c ****     return USBD_LL_Transmit(pdev, 0x81, report, len);
+ 402              		.loc 1 137 5 is_stmt 1 view .LVU94
+ 403              		.loc 1 137 12 is_stmt 0 view .LVU95
+ 404 0004 0A46     		mov	r2, r1
+ 405              	.LVL39:
+ 406              		.loc 1 137 12 view .LVU96
+ 407 0006 8121     		movs	r1, #129
+ 408              	.LVL40:
+ 409              		.loc 1 137 12 view .LVU97
+ 410 0008 FFF7FEFF 		bl	USBD_LL_Transmit
+ 411              	.LVL41:
+ 138:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c **** }
+ 412              		.loc 1 138 1 view .LVU98
+ 413 000c 08BD     		pop	{r3, pc}
+ 414              		.cfi_endproc
+ 415              	.LFE139:
+ 417              		.section	.text.USBD_WebHID_SendReport,"ax",%progbits
+ 418              		.align	1
+ 419              		.global	USBD_WebHID_SendReport
+ 420              		.syntax unified
+ 421              		.thumb
+ 422              		.thumb_func
+ 424              	USBD_WebHID_SendReport:
+ 425              	.LVL42:
+ 426              	.LFB140:
+ 139:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c **** 
+ 140:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c **** uint8_t USBD_WebHID_SendReport(USBD_HandleTypeDef *pdev, uint8_t *report, uint16_t len) {
+ 427              		.loc 1 140 89 is_stmt 1 view -0
+ 428              		.cfi_startproc
+ARM GAS  C:\Users\naoki\AppData\Local\Temp\ccKWt9uD.s 			page 12
+
+
+ 429              		@ args = 0, pretend = 0, frame = 0
+ 430              		@ frame_needed = 0, uses_anonymous_args = 0
+ 431              		.loc 1 140 89 is_stmt 0 view .LVU100
+ 432 0000 08B5     		push	{r3, lr}
+ 433              	.LCFI5:
+ 434              		.cfi_def_cfa_offset 8
+ 435              		.cfi_offset 3, -8
+ 436              		.cfi_offset 14, -4
+ 437 0002 1346     		mov	r3, r2
+ 141:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c ****     return USBD_LL_Transmit(pdev, 0x81, report, len);
+ 438              		.loc 1 141 5 is_stmt 1 view .LVU101
+ 439              		.loc 1 141 12 is_stmt 0 view .LVU102
+ 440 0004 0A46     		mov	r2, r1
+ 441              	.LVL43:
+ 442              		.loc 1 141 12 view .LVU103
+ 443 0006 8121     		movs	r1, #129
+ 444              	.LVL44:
+ 445              		.loc 1 141 12 view .LVU104
+ 446 0008 FFF7FEFF 		bl	USBD_LL_Transmit
+ 447              	.LVL45:
+ 142:Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c **** }...
+ 448              		.loc 1 142 1 view .LVU105
+ 449 000c 08BD     		pop	{r3, pc}
+ 450              		.cfi_endproc
+ 451              	.LFE140:
+ 453              		.section	.data.USBD_HID_CfgDesc_Xbox,"aw"
+ 454              		.align	2
+ 457              	USBD_HID_CfgDesc_Xbox:
+ 458 0000 09023000 		.ascii	"\011\0020\000\001\001\000\240\372\011\004\000\000\002"
+ 458      010100A0 
+ 458      FA090400 
+ 458      0002
+ 459 000e FF5D0100 		.ascii	"\377]\001\000\020!\020\001\001$\201\024\003\000\003"
+ 459      10211001 
+ 459      01248114 
+ 459      030003
+ 460 001d 13020003 		.ascii	"\023\002\000\003\000\007\005\201\003 \000\001\007\005"
+ 460      00070581 
+ 460      03200001 
+ 460      0705
+ 461 002b 02032000 		.ascii	"\002\003 \000\010"
+ 461      08
+ 462              		.section	.data.USBD_HID_CfgDesc_Web,"aw"
+ 463              		.align	2
+ 466              	USBD_HID_CfgDesc_Web:
+ 467 0000 09022900 		.ascii	"\011\002)\000\001\001\000\3002\011\004\000\000\002\003"
+ 467      010100C0 
+ 467      32090400 
+ 467      000203
+ 468 000f 00000009 		.ascii	"\000\000\000\011!\021\001\000\001\"\"\000\007\005\201"
+ 468      21110100 
+ 468      01222200 
+ 468      070581
+ 469 001e 03400001 		.ascii	"\003@\000\001\007\005\002\003@\000\001"
+ 469      07050203 
+ 469      400001
+ 470              		.section	.data.HID_ReportDesc_Config,"aw"
+ARM GAS  C:\Users\naoki\AppData\Local\Temp\ccKWt9uD.s 			page 13
+
+
+ 471              		.align	2
+ 474              	HID_ReportDesc_Config:
+ 475 0000 0660FF09 		.ascii	"\006`\377\011\001\241\001\011\001\025\000&\377\000u"
+ 475      01A10109 
+ 475      01150026 
+ 475      FF0075
+ 476 000f 08954081 		.ascii	"\010\225@\201\002\011\001\025\000&\377\000u\010\225"
+ 476      02090115 
+ 476      0026FF00 
+ 476      750895
+ 477 001e 409102C0 		.ascii	"@\221\002\300"
+ 478              		.global	USBD_HID
+ 479              		.section	.data.USBD_HID,"aw"
+ 480              		.align	2
+ 483              	USBD_HID:
+ 484 0000 00000000 		.word	USBD_HID_Init
+ 485 0004 00000000 		.word	USBD_HID_DeInit
+ 486 0008 00000000 		.word	USBD_HID_Setup
+ 487 000c 00000000 		.word	0
+ 488 0010 00000000 		.word	0
+ 489 0014 00000000 		.word	USBD_HID_DataIn
+ 490 0018 00000000 		.word	USBD_HID_DataOut
+ 491 001c 00000000 		.word	0
+ 492 0020 00000000 		.word	0
+ 493 0024 00000000 		.word	0
+ 494 0028 00000000 		.word	USBD_HID_GetCfgDesc
+ 495 002c 00000000 		.word	USBD_HID_GetCfgDesc
+ 496 0030 00000000 		.word	USBD_HID_GetCfgDesc
+ 497 0034 00000000 		.word	0
+ 498              		.global	WebHID_RxBuffer
+ 499              		.section	.bss.WebHID_RxBuffer,"aw",%nobits
+ 500              		.align	2
+ 503              	WebHID_RxBuffer:
+ 504 0000 00000000 		.space	64
+ 504      00000000 
+ 504      00000000 
+ 504      00000000 
+ 504      00000000 
+ 505              		.text
+ 506              	.Letext0:
+ 507              		.file 2 "C:/built/gnu/arm-none-eabi/include/machine/_default_types.h"
+ 508              		.file 3 "C:/built/gnu/arm-none-eabi/include/sys/_stdint.h"
+ 509              		.file 4 "Middlewares/ST/STM32_USB_Device_Library/Core/Inc/usbd_def.h"
+ 510              		.file 5 "Core/Inc/main.h"
+ 511              		.file 6 "Middlewares/ST/STM32_USB_Device_Library/Class/HID/Inc/usbd_hid.h"
+ 512              		.file 7 "Middlewares/ST/STM32_USB_Device_Library/Core/Inc/usbd_core.h"
+ 513              		.file 8 "USB_DEVICE/Target/usbd_conf.h"
+ 514              		.file 9 "Middlewares/ST/STM32_USB_Device_Library/Core/Inc/usbd_ioreq.h"
+ARM GAS  C:\Users\naoki\AppData\Local\Temp\ccKWt9uD.s 			page 14
+
+
+DEFINED SYMBOLS
+                            *ABS*:00000000 usbd_hid.c
+C:\Users\naoki\AppData\Local\Temp\ccKWt9uD.s:21     .text.USBD_HID_GetCfgDesc:00000000 $t
+C:\Users\naoki\AppData\Local\Temp\ccKWt9uD.s:26     .text.USBD_HID_GetCfgDesc:00000000 USBD_HID_GetCfgDesc
+C:\Users\naoki\AppData\Local\Temp\ccKWt9uD.s:65     .text.USBD_HID_GetCfgDesc:00000018 $d
+C:\Users\naoki\AppData\Local\Temp\ccKWt9uD.s:457    .data.USBD_HID_CfgDesc_Xbox:00000000 USBD_HID_CfgDesc_Xbox
+C:\Users\naoki\AppData\Local\Temp\ccKWt9uD.s:466    .data.USBD_HID_CfgDesc_Web:00000000 USBD_HID_CfgDesc_Web
+C:\Users\naoki\AppData\Local\Temp\ccKWt9uD.s:72     .text.USBD_HID_DataIn:00000000 $t
+C:\Users\naoki\AppData\Local\Temp\ccKWt9uD.s:77     .text.USBD_HID_DataIn:00000000 USBD_HID_DataIn
+C:\Users\naoki\AppData\Local\Temp\ccKWt9uD.s:95     .text.USBD_HID_DataOut:00000000 $t
+C:\Users\naoki\AppData\Local\Temp\ccKWt9uD.s:100    .text.USBD_HID_DataOut:00000000 USBD_HID_DataOut
+C:\Users\naoki\AppData\Local\Temp\ccKWt9uD.s:151    .text.USBD_HID_DataOut:00000024 $d
+C:\Users\naoki\AppData\Local\Temp\ccKWt9uD.s:503    .bss.WebHID_RxBuffer:00000000 WebHID_RxBuffer
+C:\Users\naoki\AppData\Local\Temp\ccKWt9uD.s:156    .text.USBD_HID_Setup:00000000 $t
+C:\Users\naoki\AppData\Local\Temp\ccKWt9uD.s:161    .text.USBD_HID_Setup:00000000 USBD_HID_Setup
+C:\Users\naoki\AppData\Local\Temp\ccKWt9uD.s:236    .text.USBD_HID_Setup:00000034 $d
+C:\Users\naoki\AppData\Local\Temp\ccKWt9uD.s:474    .data.HID_ReportDesc_Config:00000000 HID_ReportDesc_Config
+C:\Users\naoki\AppData\Local\Temp\ccKWt9uD.s:242    .text.USBD_HID_DeInit:00000000 $t
+C:\Users\naoki\AppData\Local\Temp\ccKWt9uD.s:247    .text.USBD_HID_DeInit:00000000 USBD_HID_DeInit
+C:\Users\naoki\AppData\Local\Temp\ccKWt9uD.s:290    .text.USBD_HID_Init:00000000 $t
+C:\Users\naoki\AppData\Local\Temp\ccKWt9uD.s:295    .text.USBD_HID_Init:00000000 USBD_HID_Init
+C:\Users\naoki\AppData\Local\Temp\ccKWt9uD.s:376    .text.USBD_HID_Init:0000004c $d
+C:\Users\naoki\AppData\Local\Temp\ccKWt9uD.s:382    .text.USBD_HID_SendReport:00000000 $t
+C:\Users\naoki\AppData\Local\Temp\ccKWt9uD.s:388    .text.USBD_HID_SendReport:00000000 USBD_HID_SendReport
+C:\Users\naoki\AppData\Local\Temp\ccKWt9uD.s:418    .text.USBD_WebHID_SendReport:00000000 $t
+C:\Users\naoki\AppData\Local\Temp\ccKWt9uD.s:424    .text.USBD_WebHID_SendReport:00000000 USBD_WebHID_SendReport
+C:\Users\naoki\AppData\Local\Temp\ccKWt9uD.s:454    .data.USBD_HID_CfgDesc_Xbox:00000000 $d
+C:\Users\naoki\AppData\Local\Temp\ccKWt9uD.s:463    .data.USBD_HID_CfgDesc_Web:00000000 $d
+C:\Users\naoki\AppData\Local\Temp\ccKWt9uD.s:471    .data.HID_ReportDesc_Config:00000000 $d
+C:\Users\naoki\AppData\Local\Temp\ccKWt9uD.s:483    .data.USBD_HID:00000000 USBD_HID
+C:\Users\naoki\AppData\Local\Temp\ccKWt9uD.s:480    .data.USBD_HID:00000000 $d
+C:\Users\naoki\AppData\Local\Temp\ccKWt9uD.s:500    .bss.WebHID_RxBuffer:00000000 $d
+
+UNDEFINED SYMBOLS
+g_boot_mode
+WebHID_DataReceived_Callback
+USBD_LL_PrepareReceive
+USBD_CtlSendData
+USBD_LL_CloseEP
+USBD_static_free
+USBD_LL_OpenEP
+USBD_static_malloc
+USBD_LL_Transmit

@@ -1,0 +1,892 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Magnetic Leverless Controller</title>
+    <style>
+        /* ... (CSSは変更なし) ... */
+        :root {
+            --bg-color: #121212;
+            --panel-bg: #1e1e1e;
+            --accent-color: #00ffcc;
+            --accent-active: #ff4444;
+            --text-color: #e0e0e0;
+            --border-color: #333;
+            --select-box-bg: rgba(0, 255, 204, 0.2);
+            --select-box-border: 1px solid #00ffcc;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+            user-select: none;
+        }
+
+        header {
+            background-color: var(--panel-bg);
+            padding: 10px 20px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            height: 60px;
+            box-sizing: border-box;
+            z-index: 100;
+            flex-shrink: 0;
+        }
+
+        h1 { margin: 0; font-size: 1.2rem; color: var(--accent-color); }
+
+        .toolbar { display: flex; gap: 10px; align-items: center; }
+
+        button {
+            background: #333; color: #fff; border: 1px solid #555;
+            padding: 8px 16px; border-radius: 4px; cursor: pointer;
+            transition: all 0.2s; font-weight: bold;
+            white-space: nowrap;
+        }
+        button:hover:not(:disabled) { background: #444; border-color: #777; }
+        button:disabled { opacity: 0.5; cursor: not-allowed; }
+        
+        button.connect { background: #0066cc; border-color: #0055aa; }
+        button.connect:hover:not(:disabled) { background: #0077dd; }
+        
+        button.save { background: #28a745; border-color: #1e7e34; }
+        button.save:hover:not(:disabled) { background: #34ce57; }
+
+        button.calib { background: #ffaa00; color: #000; border-color: #cc8800; }
+
+        select {
+            background: #333; color: #fff; border: 1px solid #555;
+            padding: 8px; border-radius: 4px;
+        }
+
+        .main-container {
+            flex: 1;
+            display: flex;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .visual-area {
+            flex: 1;
+            position: relative;
+            background: radial-gradient(circle at center, #2a2a2a 0%, #121212 100%);
+            overflow: auto; 
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: default;
+        }
+
+        .board-container {
+            width: 1120px; 
+            height: 700px;
+            position: relative;
+            flex-shrink: 0; 
+            margin: 50px; 
+        }
+
+        .select-all-btn {
+            position: absolute;
+            top: 20px; left: 20px;
+            z-index: 50;
+            background: rgba(0, 255, 204, 0.1);
+            border: 1px solid var(--accent-color);
+            color: var(--accent-color);
+            font-size: 0.9rem;
+            padding: 10px 20px;
+        }
+        .select-all-btn:hover {
+            background: rgba(0, 255, 204, 0.3);
+        }
+
+        .btn-visual {
+            position: absolute;
+            width: 72px; height: 72px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid #555;
+            transform: translate(-50%, -50%);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            transition: transform 0.1s, border-color 0.2s;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            z-index: 10;
+            overflow: hidden; 
+        }
+
+        .btn-visual:hover { border-color: #888; }
+
+        .btn-visual.selected {
+            border-color: var(--accent-color);
+            box-shadow: 0 0 15px var(--accent-color);
+            z-index: 20;
+            background: rgba(0, 255, 204, 0.1);
+        }
+
+        .btn-visual .fill {
+            position: absolute;
+            bottom: 0; left: 0; 
+            width: 100%; 
+            height: 0%; 
+            background: var(--accent-color);
+            opacity: 0.6; 
+            transition: height 0.05s; 
+            z-index: 1;
+            border-radius: 0; 
+        }
+        
+        .btn-visual.active .fill { background: var(--accent-active); opacity: 0.8; }
+
+        .btn-label-map {
+            position: relative; z-index: 2;
+            font-size: 18px; font-weight: 800;
+            color: #fff;
+            pointer-events: none; text-shadow: 0 0 3px #000;
+            line-height: 1.2;
+        }
+        .btn-label-phy {
+            position: relative; z-index: 2;
+            font-size: 11px; font-weight: normal;
+            color: #ccc;
+            pointer-events: none; text-shadow: 0 0 2px #000;
+        }
+
+        .settings-panel {
+            width: 350px;
+            background: var(--panel-bg);
+            border-left: 1px solid var(--border-color);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            overflow-y: auto;
+            transition: transform 0.3s ease;
+            position: relative;
+            z-index: 50;
+            flex-shrink: 0;
+        }
+
+        .settings-panel.hidden { display: none; }
+
+        .empty-state {
+            display: flex; flex-direction: column;
+            justify-content: center; align-items: center;
+            height: 100%; color: #666; text-align: center;
+        }
+
+        .panel-header {
+            border-bottom: 1px solid #444;
+            padding-bottom: 10px;
+            margin-bottom: 10px;
+        }
+        .panel-header h2 { margin: 0; color: var(--accent-color); }
+        .key-id-display { font-size: 0.8rem; color: #888; }
+
+        .control-group {
+            background: #252525;
+            padding: 15px;
+            border-radius: 8px;
+        }
+        .control-group label { display: block; margin-bottom: 8px; font-size: 0.9rem; color: #ccc; }
+        
+        .slider-row { display: flex; align-items: center; gap: 10px; }
+        input[type="range"] { flex: 1; cursor: pointer; }
+        input[type="number"] { width: 50px; background: #333; color: #fff; border: 1px solid #555; border-radius: 4px; padding: 4px; }
+
+        .bar-container {
+            height: 150px;
+            background: #000;
+            border: 1px solid #444;
+            border-radius: 4px;
+            position: relative;
+            margin-top: 10px;
+            overflow: hidden;
+        }
+        .bar-fill {
+            position: absolute; bottom: 0; width: 100%;
+            background: linear-gradient(to top, var(--accent-color), #0088ff);
+            height: 0%;
+            transition: height 0.05s;
+        }
+        .bar-fill.active { background: var(--accent-active); }
+
+        .line { position: absolute; width: 100%; height: 2px; z-index: 5; pointer-events: none; }
+        .line-ap { border-top: 2px dashed #ff4444; }
+        .line-anchor { background: #ffff00; }
+        .line-off { background: #888; }
+
+        .status-text { font-size: 0.8rem; text-align: right; margin-top: 5px; color: #888; }
+
+        .overlay {
+            position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.7);
+            display: flex; justify-content: center; align-items: center;
+            z-index: 100;
+            backdrop-filter: blur(2px);
+        }
+        .overlay-msg { font-size: 1.5rem; color: #fff; }
+        .hidden { display: none; }
+
+        .modal {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8);
+            display: flex; justify-content: center; align-items: center;
+            z-index: 200;
+            backdrop-filter: blur(3px);
+            display: none;
+        }
+        .modal-content {
+            background: var(--panel-bg);
+            padding: 20px; border-radius: 8px;
+            width: 700px; max-height: 85vh; overflow-y: auto;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 0 20px rgba(0,0,0,0.8);
+        }
+        .modal-content h2 { margin-top: 0; border-bottom: 1px solid #444; padding-bottom: 10px; }
+        
+        .macro-row {
+            display: flex; align-items: center; gap: 15px;
+            margin-bottom: 10px; padding: 10px;
+            background: #252525; border-radius: 4px;
+        }
+        .macro-label { width: 70px; font-weight: bold; color: var(--accent-color); }
+        .macro-checks { display: flex; flex-wrap: wrap; gap: 8px; flex: 1; }
+        .check-item { 
+            display: flex; align-items: center; gap: 4px; 
+            font-size: 0.85rem; cursor: pointer;
+            background: #333; padding: 2px 6px; border-radius: 3px;
+        }
+        .check-item:hover { background: #444; }
+        
+        .close-btn { 
+            background: #28a745; margin-top: 20px; width: 100%; 
+            padding: 10px; font-size: 1rem; cursor: pointer;
+            color: white; font-weight: bold;
+        }
+        .close-btn:hover { background: #34ce57; }
+
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>Magnetic Leverless</h1>
+    <div class="toolbar">
+        <button onclick="openMacroEditor()">マクロ編集</button>
+        <select id="socdSelect" disabled onchange="sendSOCD()">
+            <option value="0">SOCD: ニュートラル (CPT)</option>
+            <option value="1">SOCD: 上優先 (Hitbox)</option>
+            <option value="2">SOCD: 後押し優先 (Last Win)</option>
+        </select>
+        <button class="calib" id="btnCalib" disabled onclick="sendCalibrate()">キャリブレーション</button>
+        <button class="save" id="btnSave" disabled onclick="sendSave()">設定を保存</button>
+        <button class="connect" id="btnConnect" onclick="connectDevice()">接続</button>
+    </div>
+</header>
+
+<div class="main-container">
+    <div class="visual-area" id="visualArea" onclick="deselectKey()">
+        <button class="select-all-btn" onclick="toggleSelectAll(event)">全選択 / 解除</button>
+        <div class="board-container" id="board"></div>
+        <div id="disconnectOverlay" class="overlay hidden">
+            <div class="overlay-msg">デバイス未接続</div>
+        </div>
+    </div>
+
+    <div class="settings-panel" id="settingsPanel">
+        <div id="emptyState" class="empty-state">
+            <p>ボタンを選択して<br>設定を変更してください<br><small>(Ctrl+クリックで複数選択)</small></p>
+        </div>
+
+        <div id="settingsContent" class="hidden">
+            <div class="panel-header">
+                <h2 id="selectedKeyName">Key Name</h2>
+                <div class="key-id-display" id="selectedKeyId">ID: -</div>
+            </div>
+
+            <div class="control-group">
+                <label>ボタン割り当て</label>
+                <select id="mapSelect" onchange="updateMapping()" style="width:100%"></select>
+            </div>
+
+            <div class="control-group">
+                <label>Actuation Point (ON位置)</label>
+                <div class="slider-row">
+                    <input type="range" id="apRange" min="1" max="30" oninput="uiSync('ap')">
+                    <input type="number" id="apNum" step="0.1" min="0.1" max="3.0" onchange="uiSync('ap', true)"> mm
+                </div>
+            </div>
+
+            <div class="control-group">
+                <label>Rapid Trigger (感度)</label>
+                <div class="slider-row">
+                    <input type="range" id="rtRange" min="1" max="30" oninput="uiSync('rt')">
+                    <input type="number" id="rtNum" step="0.1" min="0.1" max="3.0" onchange="uiSync('rt', true)"> mm
+                </div>
+            </div>
+
+            <div class="control-group">
+                <label>Top Deadzone (指置き誤爆防止)</label>
+                <div class="slider-row">
+                    <input type="range" id="topRange" min="0" max="20" oninput="uiSync('top')">
+                    <input type="number" id="topNum" step="0.01" min="0.0" max="0.2" onchange="uiSync('top', true)"> mm
+                </div>
+            </div>
+
+            <div class="control-group">
+                <label>Bottom Deadzone (底打ち誤爆防止)</label>
+                <div class="slider-row">
+                    <input type="range" id="btmRange" min="0" max="20" oninput="uiSync('btm')">
+                    <input type="number" id="btmNum" step="0.01" min="0.0" max="0.2" onchange="uiSync('btm', true)"> mm
+                </div>
+            </div>
+
+            <div class="control-group">
+                <label>リアルタイム動作 (最終選択キー)</label>
+                <div class="bar-container">
+                    <div id="visApLine" class="line line-ap"></div>
+                    <div id="visAnchorLine" class="line line-anchor" style="display:none"></div>
+                    <div id="visOffLine" class="line line-off" style="display:none"></div>
+                    <div id="visBar" class="bar-fill"></div>
+                </div>
+                <div class="status-text">
+                    現在値: <span id="visVal">0.00</span> mm
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="macroModal" class="modal" onclick="closeMacroEditor(event)">
+    <div class="modal-content" onclick="event.stopPropagation()">
+        <h2>マクロ編集 (同時押し設定)</h2>
+        <div id="macroList"></div>
+        <button class="close-btn" onclick="saveAndCloseMacro()">保存して閉じる</button>
+    </div>
+</div>
+
+<script>
+    // --- Constants & Config ---
+    const CMD_GET_CONFIG    = 0x10;
+    const CMD_SET_CONFIG    = 0x20;
+    const CMD_READ_SENSORS  = 0x30;
+    const CMD_CALIBRATE     = 0x40;
+    const CMD_SAVE_SETTINGS = 0x50;
+    const CMD_SET_SOCD      = 0x60;
+    const CMD_SET_MAPPING   = 0x70;
+    const CMD_SET_MACRO     = 0x80;
+    const REPORT_ID = 0;
+    const KEY_COUNT = 20;
+    const MAX_MACROS = 8;
+
+    const xinputBits = {
+        "UP": 0x0001, "DOWN": 0x0002, "LEFT": 0x0004, "RIGHT": 0x0008,
+        "START": 0x0010, "BACK": 0x0020, "L3": 0x0040, "R3": 0x0080,
+        "LB": 0x0100, "RB": 0x0200, "A": 0x1000, "B": 0x2000, "X": 0x4000, "Y": 0x8000
+    };
+    const macroTargets = ["UP","DOWN","LEFT","RIGHT","A","B","X","Y","LB","RB","LT","RT","L3","R3","START","BACK"];
+
+    const layoutData = [
+        { "id": 0, "name": "Right", "left": "45.00%", "top": "36.82%" },
+        { "id": 1, "name": "Down", "left": "37.39%", "top": "31.74%" },
+        { "id": 2, "name": "Left", "left": "28.13%", "top": "31.74%" },
+        { "id": 3, "name": "Btn16", "left": "19.18%", "top": "36.41%" },
+        { "id": 4, "name": "Btn8", "left": "40.97%", "top": "14.30%" },
+        { "id": 5, "name": "Btn7", "left": "31.72%", "top": "14.10%" },
+        { "id": 6, "name": "Btn15", "left": "22.61%", "top": "14.10%" },
+        { "id": 7, "name": "Btn14", "left": "13.36%", "top": "14.10%" },
+        { "id": 8, "name": "Btn13", "left": "78.58%", "top": "28.90%" },
+        { "id": 9, "name": "Btn12", "left": "70.07%", "top": "27.69%" },
+        { "id": 10, "name": "Btn11", "left": "61.12%", "top": "27.69%" },
+        { "id": 11, "name": "Btn10", "left": "53.51%", "top": "32.56%" },
+        { "id": 12, "name": "Btn9", "left": "54.10%", "top": "20.59%" },
+        { "id": 13, "name": "Btn3", "left": "52.61%", "top": "44.32%" },
+        { "id": 14, "name": "Btn4", "left": "60.52%", "top": "40.06%" },
+        { "id": 15, "name": "Btn5", "left": "69.93%", "top": "40.06%" },
+        { "id": 16, "name": "Btn6", "left": "78.58%", "top": "41.68%" },
+        { "id": 17, "name": "Btn2", "left": "38.58%", "top": "61.56%" },
+        { "id": 18, "name": "Up", "left": "49.93%", "top": "61.56%" },
+        { "id": 19, "name": "Btn1", "left": "57.54%", "top": "54.06%" }
+    ];
+
+    const buttonMap = [
+        { id: 0, name: "-" },
+        { id: 1, name: "UP" }, { id: 2, name: "DOWN" }, { id: 3, name: "LEFT" }, { id: 4, name: "RIGHT" },
+        { id: 12, name: "A" }, { id: 13, name: "B" }, { id: 14, name: "X" }, { id: 15, name: "Y" },
+        { id: 9, name: "LB" }, { id: 10, name: "RB" }, { id: 16, name: "LT" }, { id: 17, name: "RT" },
+        { id: 5, name: "START" }, { id: 6, name: "BACK" }, { id: 11, name: "GUIDE" },
+        { id: 7, name: "L3" }, { id: 8, name: "R3" }
+    ];
+
+    // --- State ---
+    let device = null;
+    let selectedKeyIndices = [];
+    let keysConfig = Array(KEY_COUNT).fill().map(() => ({ ap: 1.2, rt: 0.5, top: 0.2, btm: 0.1, map: 0 }));
+    let macros = Array(MAX_MACROS).fill(0);
+    let isDirty = false;
+
+    // --- Initialization ---
+    window.onload = () => {
+        loadLocalSettings(); // ★追加: ローカルストレージから読み込み
+        initBoard();
+        initMapSelect();
+        initMacroEditor();
+        
+        window.onbeforeunload = (e) => {
+            if (isDirty) {
+                e.preventDefault();
+                e.returnValue = '';
+            }
+        };
+    };
+
+    // ★追加: ローカルストレージ保存/読み込み
+    function saveLocalSettings() {
+        const data = {
+            keysConfig: keysConfig,
+            macros: macros
+        };
+        localStorage.setItem('leverless_config', JSON.stringify(data));
+    }
+
+    function loadLocalSettings() {
+        const data = localStorage.getItem('leverless_config');
+        if (data) {
+            const parsed = JSON.parse(data);
+            if (parsed.keysConfig) keysConfig = parsed.keysConfig;
+            if (parsed.macros) macros = parsed.macros;
+        }
+    }
+
+    function initBoard() {
+        const board = document.getElementById('board');
+        layoutData.forEach(item => {
+            const btn = document.createElement('div');
+            btn.className = 'btn-visual';
+            btn.id = `btn-${item.id}`;
+            btn.style.left = item.left;
+            btn.style.top = item.top;
+            
+            btn.onclick = (e) => {
+                e.stopPropagation();
+                selectKey(item.id, e.ctrlKey || e.metaKey);
+            };
+            
+            btn.innerHTML = `
+                <div class="fill" id="fill-${item.id}"></div>
+                <div class="btn-label-map" id="lbl-map-${item.id}">-</div>
+                <div class="btn-label-phy">${item.name}</div>
+            `;
+            board.appendChild(btn);
+        });
+        updateButtonLabels(); // 初期表示更新
+    }
+
+    function initMapSelect() {
+        const sel = document.getElementById('mapSelect');
+        buttonMap.forEach(b => {
+            const opt = document.createElement('option');
+            opt.value = b.id;
+            opt.innerText = b.name;
+            sel.appendChild(opt);
+        });
+        for(let i=0; i<MAX_MACROS; i++) {
+            const opt = document.createElement('option');
+            opt.value = 50 + i;
+            opt.innerText = `Macro ${i+1}`;
+            sel.appendChild(opt);
+        }
+    }
+
+    function initMacroEditor() {
+        const list = document.getElementById('macroList');
+        if (!list) return;
+        list.innerHTML = '';
+        for(let i=0; i<MAX_MACROS; i++) {
+            const row = document.createElement('div');
+            row.className = 'macro-row';
+            
+            let html = `<div class="macro-label">Macro ${i+1}</div><div class="macro-checks">`;
+            macroTargets.forEach(t => {
+                // ローカルストレージから復元
+                let checked = false;
+                if (t === "LT") checked = (macros[i] & (1 << 8)) !== 0;
+                else if (t === "RT") checked = (macros[i] & (1 << 16)) !== 0;
+                else checked = (macros[i] & xinputBits[t]) !== 0;
+
+                html += `<label class="check-item"><input type="checkbox" id="m-${i}-${t}" ${checked ? 'checked' : ''}> ${t}</label>`;
+            });
+            html += `</div>`;
+            row.innerHTML = html;
+            list.appendChild(row);
+        }
+    }
+
+    function updateButtonLabels() {
+        for(let i=0; i<KEY_COUNT; i++) {
+            const mapId = keysConfig[i].map;
+            let name = "???";
+            if (mapId >= 50 && mapId < 50 + MAX_MACROS) {
+                name = `M${mapId - 49}`;
+            } else {
+                const mapObj = buttonMap.find(b => b.id === mapId);
+                name = mapObj ? mapObj.name : "-";
+            }
+            document.getElementById(`lbl-map-${i}`).innerText = name;
+        }
+    }
+
+    // --- Interaction ---
+    function selectKey(id, isMulti) {
+        if (isMulti) {
+            const idx = selectedKeyIndices.indexOf(id);
+            if (idx !== -1) {
+                selectedKeyIndices.splice(idx, 1);
+                document.getElementById(`btn-${id}`).classList.remove('selected');
+            } else {
+                selectedKeyIndices.push(id);
+                document.getElementById(`btn-${id}`).classList.add('selected');
+            }
+        } else {
+            selectedKeyIndices.forEach(i => {
+                document.getElementById(`btn-${i}`).classList.remove('selected');
+            });
+            selectedKeyIndices = [id];
+            document.getElementById(`btn-${id}`).classList.add('selected');
+        }
+        updatePanel();
+    }
+
+    function toggleSelectAll(e) {
+        e.stopPropagation();
+        if (selectedKeyIndices.length === KEY_COUNT) {
+            deselectKey();
+        } else {
+            selectedKeyIndices = [];
+            for(let i=0; i<KEY_COUNT; i++) {
+                selectedKeyIndices.push(i);
+                document.getElementById(`btn-${i}`).classList.add('selected');
+            }
+            updatePanel();
+        }
+    }
+
+    function deselectKey() {
+        selectedKeyIndices.forEach(i => {
+            document.getElementById(`btn-${i}`).classList.remove('selected');
+        });
+        selectedKeyIndices = [];
+        updatePanel();
+    }
+
+    function updatePanel() {
+        if (selectedKeyIndices.length === 0) {
+            document.getElementById('settingsContent').classList.add('hidden');
+            document.getElementById('emptyState').classList.remove('hidden');
+            return;
+        }
+
+        document.getElementById('emptyState').classList.add('hidden');
+        document.getElementById('settingsContent').classList.remove('hidden');
+
+        const lastId = selectedKeyIndices[selectedKeyIndices.length - 1];
+        const keyData = layoutData.find(k => k.id === lastId);
+        
+        if (selectedKeyIndices.length > 1) {
+            document.getElementById('selectedKeyName').innerText = `${selectedKeyIndices.length} keys selected`;
+            document.getElementById('selectedKeyId').innerText = `Last: ${keyData.name}`;
+            document.getElementById('mapSelect').disabled = true;
+        } else {
+            document.getElementById('selectedKeyName').innerText = keyData.name;
+            document.getElementById('selectedKeyId').innerText = `ID: ${lastId}`;
+            document.getElementById('mapSelect').disabled = false;
+        }
+        
+        const conf = keysConfig[lastId];
+        document.getElementById('apNum').value = conf.ap.toFixed(1);
+        document.getElementById('apRange').value = Math.round(conf.ap * 10);
+        document.getElementById('rtNum').value = conf.rt.toFixed(1);
+        document.getElementById('rtRange').value = Math.round(conf.rt * 10);
+        
+        document.getElementById('topNum').value = conf.top.toFixed(2);
+        document.getElementById('topRange').value = Math.round(conf.top * 100);
+        document.getElementById('btmNum').value = conf.btm.toFixed(2);
+        document.getElementById('btmRange').value = Math.round(conf.btm * 100);
+
+        document.getElementById('mapSelect').value = conf.map;
+
+        updateVisLines(conf.ap, conf.rt);
+    }
+
+    function uiSync(type, fromNum = false) {
+        if (selectedKeyIndices.length === 0) return;
+        
+        const range = document.getElementById(`${type}Range`);
+        const num = document.getElementById(`${type}Num`);
+        
+        let val;
+        if (type === 'top' || type === 'btm') {
+            if (fromNum) {
+                val = parseFloat(num.value);
+                range.value = Math.round(val * 100);
+            } else {
+                val = parseInt(range.value) / 100;
+                num.value = val.toFixed(2);
+            }
+        } else {
+            if (fromNum) {
+                val = parseFloat(num.value);
+                range.value = Math.round(val * 10);
+            } else {
+                val = parseInt(range.value) / 10;
+                num.value = val.toFixed(1);
+            }
+        }
+
+        selectedKeyIndices.forEach(id => {
+            if (type === 'ap') keysConfig[id].ap = val;
+            if (type === 'rt') keysConfig[id].rt = val;
+            if (type === 'top') keysConfig[id].top = val;
+            if (type === 'btm') keysConfig[id].btm = val;
+            sendConfig(id);
+        });
+
+        const lastId = selectedKeyIndices[selectedKeyIndices.length - 1];
+        updateVisLines(keysConfig[lastId].ap, keysConfig[lastId].rt);
+        isDirty = true;
+        saveLocalSettings(); // ★追加: 変更時にローカル保存
+    }
+
+    function updateMapping() {
+        if (selectedKeyIndices.length !== 1) return;
+        const id = selectedKeyIndices[0];
+        const val = parseInt(document.getElementById('mapSelect').value);
+        keysConfig[id].map = val;
+        sendMapping(id, val);
+        updateButtonLabels();
+        isDirty = true;
+        saveLocalSettings(); // ★追加
+    }
+
+    function updateVisLines(ap, rt) {
+        const apPct = (ap / 3.2) * 100;
+        document.getElementById('visApLine').style.bottom = `${apPct}%`;
+    }
+
+    // --- Macro Editor ---
+    function openMacroEditor() {
+        document.getElementById('macroModal').style.display = 'flex';
+    }
+    
+    function closeMacroEditor(e, force) {
+        if (force || e.target.id === 'macroModal') {
+            document.getElementById('macroModal').style.display = 'none';
+        }
+    }
+    
+    function saveAndCloseMacro() {
+        for(let i=0; i<MAX_MACROS; i++) {
+            let val = 0;
+            macroTargets.forEach(t => {
+                if (document.getElementById(`m-${i}-${t}`).checked) {
+                    if (t === "LT") val |= (1 << 8);
+                    else if (t === "RT") val |= (1 << 16);
+                    else val |= xinputBits[t];
+                }
+            });
+            macros[i] = val;
+            sendMacro(i, val);
+        }
+        document.getElementById('macroModal').style.display = 'none';
+        isDirty = true;
+        saveLocalSettings(); // ★追加
+    }
+
+    // --- WebHID Communication ---
+    async function connectDevice() {
+        try {
+            const devices = await navigator.hid.requestDevice({
+                filters: [
+                    { vendorId: 0x0483, productId: 0x5751 },
+                    { vendorId: 0x045e, productId: 0x028e }
+                ]
+            });
+
+            if (devices.length > 0) {
+                device = devices[0];
+                await device.open();
+                
+                document.getElementById('btnConnect').innerText = "接続済み";
+                document.getElementById('btnConnect').disabled = true;
+                document.getElementById('btnCalib').disabled = false;
+                document.getElementById('btnSave').disabled = false;
+                document.getElementById('socdSelect').disabled = false;
+
+                device.addEventListener('inputreport', handleInputReport);
+                await readConfig();
+                startPolling();
+                deselectKey();
+                isDirty = false;
+            }
+        } catch (e) {
+            console.error(e);
+            alert("接続できませんでした");
+        }
+    }
+
+    async function startPolling() {
+        while (device && device.opened) {
+            try {
+                const data = new Uint8Array(64);
+                data[0] = CMD_READ_SENSORS;
+                await device.sendReport(REPORT_ID, data);
+                await new Promise(r => setTimeout(r, 10));
+            } catch (e) { break; }
+        }
+    }
+
+    async function readConfig() {
+        const data = new Uint8Array(64);
+        data[0] = CMD_GET_CONFIG;
+        await device.sendReport(REPORT_ID, data);
+    }
+
+    function handleInputReport(event) {
+        const { data } = event;
+        const cmd = data.getUint8(0);
+
+        if (cmd === CMD_READ_SENSORS) {
+            for (let i = 0; i < KEY_COUNT; i++) {
+                const rawPos = data.getUint8(i + 1);
+                const isPressed = data.getUint8(i + 21) === 1;
+                const rawAnchor = data.getUint8(i + 41);
+
+                const fill = document.getElementById(`fill-${i}`);
+                const btn = document.getElementById(`btn-${i}`);
+                if (fill) {
+                    fill.style.height = `${(rawPos / 255) * 100}%`;
+                    if (isPressed) btn.classList.add('active');
+                    else btn.classList.remove('active');
+                }
+
+                if (selectedKeyIndices.length > 0 && i === selectedKeyIndices[selectedKeyIndices.length - 1]) {
+                    const mm = (rawPos / 255) * 3.2;
+                    const anchorMm = (rawAnchor / 255) * 3.2;
+                    const rtVal = keysConfig[i].rt;
+
+                    document.getElementById('visVal').innerText = mm.toFixed(2);
+                    
+                    const bar = document.getElementById('visBar');
+                    bar.style.height = `${(rawPos / 255) * 100}%`;
+                    if (isPressed) bar.classList.add('active');
+                    else bar.classList.remove('active');
+
+                    const anchorLine = document.getElementById('visAnchorLine');
+                    const offLine = document.getElementById('visOffLine');
+
+                    if (isPressed) {
+                        anchorLine.style.display = 'block';
+                        anchorLine.style.bottom = `${(rawAnchor / 255) * 100}%`;
+                        offLine.style.display = 'block';
+                        let offMm = anchorMm - rtVal;
+                        if (offMm < 0) offMm = 0;
+                        offLine.style.bottom = `${(offMm / 3.2) * 100}%`;
+                    } else {
+                        anchorLine.style.display = 'none';
+                        offLine.style.display = 'none';
+                    }
+                }
+            }
+        }
+        else if (cmd === CMD_GET_CONFIG) {
+            const socd = data.getUint8(1);
+            document.getElementById('socdSelect').value = socd;
+
+            for (let i = 0; i < KEY_COUNT; i++) {
+                keysConfig[i].ap = data.getUint8(i + 2) / 10.0;
+                keysConfig[i].rt = data.getUint8(i + 22) / 10.0;
+                keysConfig[i].map = data.getUint8(i + 42);
+            }
+            deselectKey();
+            updateButtonLabels();
+            saveLocalSettings(); // ★追加
+        }
+    }
+
+    async function sendConfig(id) {
+        if (!device) return;
+        const conf = keysConfig[id];
+        const data = new Uint8Array(64);
+        data[0] = CMD_SET_CONFIG;
+        data[1] = id;
+        data[2] = Math.round(conf.ap * 10);
+        data[3] = Math.round(conf.rt * 10);
+        data[4] = Math.round(conf.top * 100);
+        data[5] = Math.round(conf.btm * 100);
+        await device.sendReport(REPORT_ID, data);
+        isDirty = true;
+    }
+
+    async function sendMapping(id, mapVal) {
+        if (!device) return;
+        const data = new Uint8Array(64);
+        data[0] = CMD_SET_MAPPING;
+        data[1] = id;
+        data[2] = mapVal;
+        await device.sendReport(REPORT_ID, data);
+        isDirty = true;
+    }
+
+    async function sendMacro(id, val) {
+        if (!device) return;
+        const data = new Uint8Array(64);
+        data[0] = CMD_SET_MACRO;
+        data[1] = id;
+        data[2] = val & 0xFF;
+        data[3] = (val >> 8) & 0xFF;
+        data[4] = (val >> 16) & 0xFF;
+        data[5] = (val >> 24) & 0xFF;
+        await device.sendReport(REPORT_ID, data);
+    }
+
+    async function sendSOCD() {
+        if (!device) return;
+        const val = document.getElementById('socdSelect').value;
+        const data = new Uint8Array(64);
+        data[0] = CMD_SET_SOCD;
+        data[1] = parseInt(val);
+        await device.sendReport(REPORT_ID, data);
+        isDirty = true;
+    }
+
+    async function sendCalibrate() {
+        if (!device) return;
+        const data = new Uint8Array(64);
+        data[0] = CMD_CALIBRATE;
+        await device.sendReport(REPORT_ID, data);
+        alert("キャリブレーション完了");
+    }
+
+    async function sendSave() {
+        if (!device) return;
+        const data = new Uint8Array(64);
+        data[0] = CMD_SAVE_SETTINGS;
+        await device.sendReport(REPORT_ID, data);
+        alert("設定を保存しました");
+        isDirty = false;
+    }
+</script>
+</body>
+</html>
