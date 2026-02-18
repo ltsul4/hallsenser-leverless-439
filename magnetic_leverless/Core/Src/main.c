@@ -166,7 +166,6 @@ extern uint8_t USBD_HID_SendReport(USBD_HandleTypeDef *pdev, uint8_t *report, ui
 
 // --- 初期化 ---
 void Setup_Keys(void) {
-    // 安定化のために少し待つ
     HAL_Delay(100);
     scan_all_keys_fast(adc_raw_values);
     HAL_Delay(50);
@@ -273,7 +272,7 @@ void scan_all_keys_fast(uint16_t *buffer) {
     }
 }
 
-// --- ラピッドトリガー ---
+// --- ラピッドトリガー (AP優先ロジック修正版) ---
 void Process_Rapid_Trigger(int key_idx, uint16_t raw) {
     KeyState_t *k = &key_states[key_idx];
     int diff = (int)raw - (int)k->resting_val;
@@ -292,18 +291,53 @@ void Process_Rapid_Trigger(int key_idx, uint16_t raw) {
 
     bool in_bottom_zone = (pos > (TRAVEL_DISTANCE_MM - k->bottom_deadzone));
 
+    // 1. AP以下の処理 (絶対優先)
+    if (pos < k->actuation_point) {
+        k->is_pressed = false;
+        // AP以下にいる間は、アンカー(最下点)を常に現在位置に更新する
+        // これにより、次にAPを超えた瞬間に「アンカー < AP」の条件を満たせるようにする
+        k->anchor_mm = pos;
+        return;
+    }
+
+    // 2. AP以上の処理
     if (k->is_pressed) {
-        if (pos < (k->anchor_mm - k->rt_release)) {
-            if (!in_bottom_zone) { k->is_pressed = false; k->anchor_mm = pos; } 
-            else { k->anchor_mm = pos; }
-        } 
-        else if (pos > k->anchor_mm) { k->anchor_mm = pos; }
-        if (pos <= 0.1f) k->is_pressed = false; 
-    } else {
-        if (pos > (k->anchor_mm + k->rt_press) && pos >= k->actuation_point) { 
-            k->is_pressed = true; k->anchor_mm = pos; 
-        } 
-        else if (pos < k->anchor_mm) { k->anchor_mm = pos; }
+        // 現在ONの場合: リリース判定
+        
+        // より深く押し込んだ場合、アンカー(最深点)を更新
+        if (pos > k->anchor_mm) {
+            k->anchor_mm = pos;
+        }
+        // RTリリース判定 (底打ちゾーン以外)
+        else if (pos < (k->anchor_mm - k->rt_release)) {
+            if (!in_bottom_zone) {
+                k->is_pressed = false;
+                k->anchor_mm = pos; // リリース地点を新たなアンカー(最浅点)とする
+            } else {
+                // 底打ちゾーンではアンカーだけ更新してOFFにしない(デッドゾーン設定による)
+                k->anchor_mm = pos;
+            }
+        }
+    } 
+    else {
+        // 現在OFFの場合: プレス判定
+        
+        // ケースA: ラピッドトリガー再点火 (APより上で浮かせた状態からの再入力)
+        if (pos > (k->anchor_mm + k->rt_press)) {
+            k->is_pressed = true;
+            k->anchor_mm = pos;
+        }
+        // ケースB: 初回入力 (AP越え判定)
+        // アンカー(直前の最下点)がAPより下にある状態で、現在位置がAPを超えている場合
+        // RT感度に関係なく即座にONにする
+        else if (k->anchor_mm < k->actuation_point) {
+            k->is_pressed = true;
+            k->anchor_mm = pos;
+        }
+        // まだONにならない場合、アンカー(最浅点)を更新して追従させる
+        else if (pos < k->anchor_mm) {
+            k->anchor_mm = pos;
+        }
     }
 }
 
@@ -461,11 +495,13 @@ void WebHID_DataReceived_Callback(uint8_t* data, uint32_t len) {
         uint8_t id = data[1];
         if (id < KEY_COUNT) {
             float ap = (float)data[2] / 10.0f;
-            if (ap < 0.1f) ap = 0.1f; if (ap > 3.0f) ap = 3.0f;
+            if (ap < 0.1f) ap = 0.1f; 
+            if (ap > 3.0f) ap = 3.0f;
             key_states[id].actuation_point = ap;
 
             float rt = (float)data[3] / 10.0f;
-            if (rt < 0.1f) rt = 0.1f; if (rt > 3.0f) rt = 3.0f;
+            if (rt < 0.1f) rt = 0.1f; 
+            if (rt > 3.0f) rt = 3.0f;
             key_states[id].rt_press = rt; key_states[id].rt_release = rt;
             
             float top = (float)data[4] / 100.0f;
@@ -502,37 +538,29 @@ int main(void) {
     MX_ADC3_Init();
     MX_ADC4_Init();
     
-    // ★修正: まず現在の状態をスキャンしてブートモードを判定
-    // Setup_Keys(キャリブレーション)はまだ呼ばない
     HAL_Delay(100);
     scan_all_keys_fast(adc_raw_values);
     
-    // UP(18) と DOWN(1) の差分で判定 (既存ロジック踏襲)
-    // 閾値を超えていれば「ボタンが押されている」とみなす
     int diff_up_down = abs((int)adc_raw_values[18] - (int)adc_raw_values[1]);
     
     if (diff_up_down > 500) { 
         g_boot_mode = 1; 
         
-        // ★追加: ボタンが離されるまで待機 (タイムアウト付き)
-        // これにより、押された状態がResting Valueとして登録されるのを防ぐ
         uint32_t start_tick = HAL_GetTick();
-        while ((HAL_GetTick() - start_tick) < 5000) { // 最大5秒待機
+        while ((HAL_GetTick() - start_tick) < 5000) { 
             scan_all_keys_fast(adc_raw_values);
             int current_diff = abs((int)adc_raw_values[18] - (int)adc_raw_values[1]);
-            if (current_diff < 300) { // 離されたと判定する閾値
+            if (current_diff < 300) { 
                 break;
             }
             HAL_Delay(10);
         }
-        // 離された直後の振動などを考慮して少し待つ
         HAL_Delay(500);
         
     } else { 
         g_boot_mode = 0; 
     }
 
-    // ★修正: ボタンが離された後にキャリブレーションを実行
     Setup_Keys(); 
     Load_Config();
 
