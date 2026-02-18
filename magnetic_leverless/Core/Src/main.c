@@ -15,17 +15,18 @@
 #define TRAVEL_DISTANCE_MM 3.2f
 #define ADC_MAX 4095.0f
 #define RAW_DEADZONE 60 
-#define MAX_MACROS 8
 
 // WebHID Commands
 #define CMD_GET_CONFIG    0x10 
+#define CMD_GET_COMBOS    0x11
 #define CMD_SET_CONFIG    0x20 
 #define CMD_READ_SENSORS  0x30 
 #define CMD_CALIBRATE     0x40 
 #define CMD_SAVE_SETTINGS 0x50 
 #define CMD_SET_SOCD      0x60 
 #define CMD_SET_MAPPING   0x70 
-#define CMD_SET_MACRO     0x80 
+#define CMD_STOP_INPUT    0x80 
+#define CMD_SET_COMBO     0x81 
 
 // Flash Memory
 #define FLASH_STORAGE_ADDR 0x0801F800
@@ -50,7 +51,11 @@
 #define BTN_Y         15
 #define BTN_LT        16 
 #define BTN_RT        17 
-// 50~57: Macro 1~8
+// コンボボタンID
+#define BTN_COMBO_1   100
+#define BTN_COMBO_2   101
+#define BTN_COMBO_3   102
+#define BTN_COMBO_4   103
 
 // XInput Bitmask
 #define XINPUT_DPAD_UP    0x0001
@@ -69,15 +74,14 @@
 #define XINPUT_THUMB_R    0x0080
 #define XINPUT_GUIDE      0x0400
 
+#define COMBO_COUNT 4
+
 // --- キーマップ (デフォルト) ---
 uint8_t key_map[KEY_COUNT] = {
     BTN_RIGHT, BTN_DOWN, BTN_LEFT, BTN_R3, BTN_L3, BTN_GUIDE, BTN_BACK, BTN_START, 
     BTN_RB,    BTN_LB,   BTN_Y,    BTN_X,  BTN_R3, BTN_A,     BTN_B,    BTN_LT, 
     BTN_RT,    BTN_L3,   BTN_UP,   BTN_R3
 };
-
-// --- マクロ定義 ---
-uint32_t custom_macros[MAX_MACROS] = {0};
 
 // --- 構造体 ---
 typedef struct {
@@ -86,12 +90,20 @@ typedef struct {
     float current_mm;
     float anchor_mm;
     bool is_pressed;
+    
+    // 設定値
     float actuation_point;
     float rt_press;
     float rt_release;
     float top_deadzone;
     float bottom_deadzone;
 } KeyState_t;
+
+typedef struct {
+    uint16_t mask; 
+    uint8_t lt;    
+    uint8_t rt;    
+} ComboSetting_t;
 
 // Flash保存用構造体
 typedef struct {
@@ -102,7 +114,7 @@ typedef struct {
     float bottom_dz[KEY_COUNT];
     uint8_t socd_mode;
     uint8_t key_map[KEY_COUNT];
-    uint32_t macros[MAX_MACROS];
+    ComboSetting_t combos[COMBO_COUNT];
     uint8_t reserved[3];
 } FlashConfig_t;
 
@@ -122,8 +134,10 @@ extern ADC_HandleTypeDef hadc4;
 uint8_t g_boot_mode = 0; 
 volatile bool g_req_calibrate = false;
 volatile bool g_req_save = false;
+volatile bool g_input_enabled = true; 
 
 uint8_t g_socd_mode = 0; 
+ComboSetting_t g_combos[COMBO_COUNT];
 
 // Last Win用
 bool last_left_state = false;
@@ -152,7 +166,8 @@ extern uint8_t USBD_HID_SendReport(USBD_HandleTypeDef *pdev, uint8_t *report, ui
 
 // --- 初期化 ---
 void Setup_Keys(void) {
-    HAL_Delay(200);
+    // 安定化のために少し待つ
+    HAL_Delay(100);
     scan_all_keys_fast(adc_raw_values);
     HAL_Delay(50);
     scan_all_keys_fast(adc_raw_values);
@@ -160,24 +175,21 @@ void Setup_Keys(void) {
     for(int i=0; i<KEY_COUNT; i++) {
         key_states[i].resting_val = adc_raw_values[i];
         key_states[i].max_diff = 200; 
+        
         key_states[i].actuation_point = 1.2f;
         key_states[i].rt_press = 0.5f;
         key_states[i].rt_release = 0.5f;
         key_states[i].top_deadzone = 0.2f;
         key_states[i].bottom_deadzone = 0.1f;
+        
         key_states[i].is_pressed = false;
         key_states[i].anchor_mm = 0.0f;
         key_states[i].current_mm = 0.0f;
     }
     g_socd_mode = 0; 
-    memset(custom_macros, 0, sizeof(custom_macros));
-    
-    uint8_t default_map[KEY_COUNT] = {
-        BTN_RIGHT, BTN_DOWN, BTN_LEFT, BTN_R3, BTN_L3, BTN_GUIDE, BTN_BACK, BTN_START, 
-        BTN_RB,    BTN_LB,   BTN_Y,    BTN_X,  BTN_R3, BTN_A,     BTN_B,    BTN_LT, 
-        BTN_RT,    BTN_L3,   BTN_UP,   BTN_R3
-    };
-    memcpy(key_map, default_map, KEY_COUNT);
+    for(int i=0; i<COMBO_COUNT; i++) {
+        g_combos[i].mask = 0; g_combos[i].lt = 0; g_combos[i].rt = 0;
+    }
 }
 
 // --- Flash 保存/読み込み ---
@@ -192,9 +204,7 @@ void Save_Config(void) {
         cfg.bottom_dz[i] = key_states[i].bottom_deadzone;
         cfg.key_map[i] = key_map[i];
     }
-    for(int i=0; i<MAX_MACROS; i++) {
-        cfg.macros[i] = custom_macros[i];
-    }
+    for(int i=0; i<COMBO_COUNT; i++) cfg.combos[i] = g_combos[i];
 
     HAL_FLASH_Unlock();
     FLASH_EraseInitTypeDef EraseInitStruct;
@@ -224,9 +234,7 @@ void Load_Config(void) {
             key_states[i].bottom_deadzone = pCfg->bottom_dz[i];
             key_map[i] = pCfg->key_map[i];
         }
-        for(int i=0; i<MAX_MACROS; i++) {
-            custom_macros[i] = pCfg->macros[i];
-        }
+        for(int i=0; i<COMBO_COUNT; i++) g_combos[i] = pCfg->combos[i];
     }
 }
 
@@ -286,23 +294,34 @@ void Process_Rapid_Trigger(int key_idx, uint16_t raw) {
 
     if (k->is_pressed) {
         if (pos < (k->anchor_mm - k->rt_release)) {
-            if (!in_bottom_zone) { k->is_pressed = false; k->anchor_mm = pos; }
+            if (!in_bottom_zone) { k->is_pressed = false; k->anchor_mm = pos; } 
             else { k->anchor_mm = pos; }
         } 
         else if (pos > k->anchor_mm) { k->anchor_mm = pos; }
         if (pos <= 0.1f) k->is_pressed = false; 
     } else {
-        if (pos > (k->anchor_mm + k->rt_press) && pos >= k->actuation_point) { k->is_pressed = true; k->anchor_mm = pos; } 
+        if (pos > (k->anchor_mm + k->rt_press) && pos >= k->actuation_point) { 
+            k->is_pressed = true; k->anchor_mm = pos; 
+        } 
         else if (pos < k->anchor_mm) { k->anchor_mm = pos; }
     }
 }
 
-// --- レポート送信 (マクロ修正版) ---
+// --- レポート送信 ---
 void Send_Reports(void) {
     static XInputReport_t prev_report = {0};
     XInputReport_t report = {0};
     report.msg_type = 0x00;
     report.pkt_size = 0x14;
+
+    if (!g_input_enabled) {
+        if (memcmp(&report, &prev_report, sizeof(XInputReport_t)) != 0) {
+            if (USBD_HID_SendReport(&hUsbDeviceFS, (uint8_t*)&report, sizeof(report)) == USBD_OK) {
+                prev_report = report;
+            }
+        }
+        return;
+    }
 
     uint16_t btns_mask = 0;
     uint8_t trigger_l = 0;
@@ -313,54 +332,43 @@ void Send_Reports(void) {
         if (key_states[i].is_pressed) {
             uint8_t id = key_map[i];
             
-            // マクロ処理 (ID 50-57)
-            if (id >= 50 && id < 50 + MAX_MACROS) {
-                uint32_t m = custom_macros[id - 50];
-                // 下位16bitがボタンマスク
-                uint16_t m_btns = (m & 0xFFFF);
-                // 次の8bitがLT, その次がRT
-                uint8_t m_lt = (m >> 8) & 0xFF; // ★修正: シフト量を修正
-                uint8_t m_rt = (m >> 16) & 0xFF;
-
-                // ★修正: ビットマスクを直接OR演算
-                btns_mask |= m_btns;
-                
-                // トリガーは最大値を採用
-                if (m_lt) trigger_l = 255;
-                if (m_rt) trigger_r = 255;
-
-                // 方向キーの状態を更新 (SOCD用)
-                if (m_btns & XINPUT_DPAD_UP) up = true;
-                if (m_btns & XINPUT_DPAD_DOWN) down = true;
-                if (m_btns & XINPUT_DPAD_LEFT) left = true;
-                if (m_btns & XINPUT_DPAD_RIGHT) right = true;
-            }
-            else {
-                switch(id) {
-                    case BTN_UP:    up=true; break;
-                    case BTN_DOWN:  down=true; break;
-                    case BTN_LEFT:  left=true; break;
-                    case BTN_RIGHT: right=true; break;
-                    case BTN_START: btns_mask |= XINPUT_START; break;
-                    case BTN_BACK:  btns_mask |= XINPUT_BACK; break;
-                    case BTN_L3:    btns_mask |= XINPUT_THUMB_L; break;
-                    case BTN_R3:    btns_mask |= XINPUT_THUMB_R; break;
-                    case BTN_LB:    btns_mask |= XINPUT_LB; break;
-                    case BTN_RB:    btns_mask |= XINPUT_RB; break;
-                    case BTN_GUIDE: btns_mask |= XINPUT_GUIDE; break;
-                    case BTN_A:     btns_mask |= XINPUT_BTN_A; break;
-                    case BTN_B:     btns_mask |= XINPUT_BTN_B; break;
-                    case BTN_X:     btns_mask |= XINPUT_BTN_X; break;
-                    case BTN_Y:     btns_mask |= XINPUT_BTN_Y; break;
-                    case BTN_LT:    trigger_l = 255; break;
-                    case BTN_RT:    trigger_r = 255; break;
-                    default: break;
+            if (id >= BTN_COMBO_1 && id <= BTN_COMBO_4) {
+                int combo_idx = id - BTN_COMBO_1;
+                if (combo_idx < COMBO_COUNT) {
+                    btns_mask |= g_combos[combo_idx].mask;
+                    if (g_combos[combo_idx].lt) trigger_l = 255;
+                    if (g_combos[combo_idx].rt) trigger_r = 255;
+                    if (g_combos[combo_idx].mask & XINPUT_DPAD_UP) up = true;
+                    if (g_combos[combo_idx].mask & XINPUT_DPAD_DOWN) down = true;
+                    if (g_combos[combo_idx].mask & XINPUT_DPAD_LEFT) left = true;
+                    if (g_combos[combo_idx].mask & XINPUT_DPAD_RIGHT) right = true;
                 }
+                continue;
+            }
+
+            switch(id) {
+                case BTN_UP:    up=true; break;
+                case BTN_DOWN:  down=true; break;
+                case BTN_LEFT:  left=true; break;
+                case BTN_RIGHT: right=true; break;
+                case BTN_START: btns_mask |= XINPUT_START; break;
+                case BTN_BACK:  btns_mask |= XINPUT_BACK; break;
+                case BTN_L3:    btns_mask |= XINPUT_THUMB_L; break;
+                case BTN_R3:    btns_mask |= XINPUT_THUMB_R; break;
+                case BTN_LB:    btns_mask |= XINPUT_LB; break;
+                case BTN_RB:    btns_mask |= XINPUT_RB; break;
+                case BTN_GUIDE: btns_mask |= XINPUT_GUIDE; break;
+                case BTN_A:     btns_mask |= XINPUT_BTN_A; break;
+                case BTN_B:     btns_mask |= XINPUT_BTN_B; break;
+                case BTN_X:     btns_mask |= XINPUT_BTN_X; break;
+                case BTN_Y:     btns_mask |= XINPUT_BTN_Y; break;
+                case BTN_LT:    trigger_l = 255; break;
+                case BTN_RT:    trigger_r = 255; break;
+                default: break;
             }
         }
     }
 
-    // SOCD
     if (g_socd_mode == 2) {
         if (left && !last_left_state) last_lr_winner = -1;
         if (right && !last_right_state) last_lr_winner = 1;
@@ -371,11 +379,11 @@ void Send_Reports(void) {
     }
 
     if (left && right) {
-        if (g_socd_mode == 0) { btns_mask &= ~(XINPUT_DPAD_LEFT | XINPUT_DPAD_RIGHT); }
-        else if (g_socd_mode == 1) { btns_mask &= ~(XINPUT_DPAD_LEFT | XINPUT_DPAD_RIGHT); }
+        if (g_socd_mode == 0) { }
+        else if (g_socd_mode == 1) { }
         else if (g_socd_mode == 2) { 
-            if (last_lr_winner == -1) { btns_mask |= XINPUT_DPAD_LEFT; btns_mask &= ~XINPUT_DPAD_RIGHT; }
-            else { btns_mask |= XINPUT_DPAD_RIGHT; btns_mask &= ~XINPUT_DPAD_LEFT; }
+            if (last_lr_winner == -1) btns_mask |= XINPUT_DPAD_LEFT;
+            else btns_mask |= XINPUT_DPAD_RIGHT;
         }
     } else {
         if (left) btns_mask |= XINPUT_DPAD_LEFT;
@@ -383,11 +391,11 @@ void Send_Reports(void) {
     }
     
     if (up && down) { 
-        if (g_socd_mode == 0) { btns_mask &= ~(XINPUT_DPAD_UP | XINPUT_DPAD_DOWN); }
-        else if (g_socd_mode == 1) { btns_mask |= XINPUT_DPAD_UP; btns_mask &= ~XINPUT_DPAD_DOWN; } 
+        if (g_socd_mode == 0) { }
+        else if (g_socd_mode == 1) { btns_mask |= XINPUT_DPAD_UP; } 
         else if (g_socd_mode == 2) { 
-            if (last_ud_winner == 1) { btns_mask |= XINPUT_DPAD_UP; btns_mask &= ~XINPUT_DPAD_DOWN; }
-            else { btns_mask |= XINPUT_DPAD_DOWN; btns_mask &= ~XINPUT_DPAD_UP; }
+            if (last_ud_winner == 1) btns_mask |= XINPUT_DPAD_UP;
+            else btns_mask |= XINPUT_DPAD_DOWN;
         }
     } else {
         if (up) btns_mask |= XINPUT_DPAD_UP;
@@ -434,7 +442,19 @@ void WebHID_DataReceived_Callback(uint8_t* data, uint32_t len) {
         for(int i=0; i<KEY_COUNT; i++) tx[i+2] = (uint8_t)(key_states[i].actuation_point * 10.0f);
         for(int i=0; i<KEY_COUNT; i++) tx[i+22] = (uint8_t)(key_states[i].rt_press * 10.0f);
         for(int i=0; i<KEY_COUNT; i++) tx[i+42] = key_map[i];
-        
+        USBD_WebHID_SendReport(&hUsbDeviceFS, tx, 64);
+    }
+    else if (cmd == CMD_GET_COMBOS) {
+        static uint8_t tx[64];
+        memset(tx, 0, 64);
+        tx[0] = CMD_GET_COMBOS;
+        for(int i=0; i<COMBO_COUNT; i++) {
+            int offset = 1 + (i * 4);
+            tx[offset] = g_combos[i].mask & 0xFF;
+            tx[offset+1] = (g_combos[i].mask >> 8) & 0xFF;
+            tx[offset+2] = g_combos[i].lt;
+            tx[offset+3] = g_combos[i].rt;
+        }
         USBD_WebHID_SendReport(&hUsbDeviceFS, tx, 64);
     }
     else if (cmd == CMD_SET_CONFIG) {
@@ -460,18 +480,17 @@ void WebHID_DataReceived_Callback(uint8_t* data, uint32_t len) {
         uint8_t btn = data[2];
         if (id < KEY_COUNT) key_map[id] = btn;
     }
-    else if (cmd == CMD_SET_MACRO) {
-        uint8_t macro_id = data[1];
-        if (macro_id < MAX_MACROS) {
-            // ★修正: JS側でパックしたデータを正しく復元
-            // JS: val = buttons | (LT << 8) | (RT << 16)
-            // C:  custom_macros = val
-            uint32_t val = data[2] | (data[3] << 8) | (data[4] << 16) | (data[5] << 24);
-            custom_macros[macro_id] = val;
-        }
-    }
     else if (cmd == CMD_CALIBRATE) { g_req_calibrate = true; }
     else if (cmd == CMD_SAVE_SETTINGS) { g_req_save = true; }
+    else if (cmd == CMD_STOP_INPUT) { g_input_enabled = (data[1] == 1); }
+    else if (cmd == CMD_SET_COMBO) {
+        uint8_t idx = data[1];
+        if (idx < COMBO_COUNT) {
+            g_combos[idx].mask = (data[3] << 8) | data[2];
+            g_combos[idx].lt = data[4];
+            g_combos[idx].rt = data[5];
+        }
+    }
 }
 
 // --- Main ---
@@ -483,38 +502,41 @@ int main(void) {
     MX_ADC3_Init();
     MX_ADC4_Init();
     
-    // 1. 仮の初期化 (モード判定用)
-    // ここでは基準点はまだ確定させない
-    HAL_Delay(200);
+    // ★修正: まず現在の状態をスキャンしてブートモードを判定
+    // Setup_Keys(キャリブレーション)はまだ呼ばない
+    HAL_Delay(100);
     scan_all_keys_fast(adc_raw_values);
     
-    // 2. モード判定
+    // UP(18) と DOWN(1) の差分で判定 (既存ロジック踏襲)
+    // 閾値を超えていれば「ボタンが押されている」とみなす
     int diff_up_down = abs((int)adc_raw_values[18] - (int)adc_raw_values[1]);
+    
     if (diff_up_down > 500) { 
-        g_boot_mode = 1; // Config Mode
-    } else {
-        g_boot_mode = 0; // Xbox Mode
+        g_boot_mode = 1; 
+        
+        // ★追加: ボタンが離されるまで待機 (タイムアウト付き)
+        // これにより、押された状態がResting Valueとして登録されるのを防ぐ
+        uint32_t start_tick = HAL_GetTick();
+        while ((HAL_GetTick() - start_tick) < 5000) { // 最大5秒待機
+            scan_all_keys_fast(adc_raw_values);
+            int current_diff = abs((int)adc_raw_values[18] - (int)adc_raw_values[1]);
+            if (current_diff < 300) { // 離されたと判定する閾値
+                break;
+            }
+            HAL_Delay(10);
+        }
+        // 離された直後の振動などを考慮して少し待つ
+        HAL_Delay(500);
+        
+    } else { 
+        g_boot_mode = 0; 
     }
 
-    // 3. 設定読み込み
+    // ★修正: ボタンが離された後にキャリブレーションを実行
+    Setup_Keys(); 
     Load_Config();
 
-    // 4. USB接続開始
     MX_USB_DEVICE_Init();
-    
-    // ★修正: 設定モードの場合、指が離れるのを待ってから基準点を取る
-    if (g_boot_mode == 1) {
-        // UPボタンの値が安定する（指が離れる）まで待つ簡易ロジック
-        // あるいは、Webツール接続後にキャリブレーションを必須とする
-        
-        // 今回は「起動時は変な値でもOK、Webツールでキャリブレーションする」という運用が確実ですが、
-        // 少しでもマシにするなら、ここで少し待ってから再取得します。
-        HAL_Delay(1000); // 1秒待つ (この間に指を離してもらう)
-        Setup_Keys(); 
-    } else {
-        // Xboxモードなら即座に初期化
-        Setup_Keys();
-    }
     
     while (1) {
         if (g_req_calibrate) { HAL_Delay(100); Setup_Keys(); g_req_calibrate = false; }

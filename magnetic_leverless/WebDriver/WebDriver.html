@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Magnetic Leverless Controller</title>
     <style>
-        /* ... (CSSは変更なし) ... */
         :root {
             --bg-color: #121212;
             --panel-bg: #1e1e1e;
@@ -13,8 +12,6 @@
             --accent-active: #ff4444;
             --text-color: #e0e0e0;
             --border-color: #333;
-            --select-box-bg: rgba(0, 255, 204, 0.2);
-            --select-box-border: 1px solid #00ffcc;
         }
 
         body {
@@ -29,6 +26,7 @@
             user-select: none;
         }
 
+        /* --- Header & Toolbar --- */
         header {
             background-color: var(--panel-bg);
             padding: 10px 20px;
@@ -42,14 +40,14 @@
             flex-shrink: 0;
         }
 
-        h1 { margin: 0; font-size: 1.2rem; color: var(--accent-color); }
+        h1 { margin: 0; font-size: 1.2rem; color: var(--accent-color); letter-spacing: 1px; }
 
         .toolbar { display: flex; gap: 10px; align-items: center; }
 
         button {
             background: #333; color: #fff; border: 1px solid #555;
-            padding: 8px 16px; border-radius: 4px; cursor: pointer;
-            transition: all 0.2s; font-weight: bold;
+            padding: 8px 16px; border-radius: 6px; cursor: pointer;
+            transition: all 0.2s; font-weight: bold; font-size: 0.9rem;
             white-space: nowrap;
         }
         button:hover:not(:disabled) { background: #444; border-color: #777; }
@@ -63,11 +61,15 @@
 
         button.calib { background: #ffaa00; color: #000; border-color: #cc8800; }
 
+        button.stop-input { background: #ff4444; border-color: #cc0000; }
+        button.stop-input.active { background: #333; border-color: #555; }
+
         select {
             background: #333; color: #fff; border: 1px solid #555;
-            padding: 8px; border-radius: 4px;
+            padding: 8px; border-radius: 6px;
         }
 
+        /* --- Main Layout Area --- */
         .main-container {
             flex: 1;
             display: flex;
@@ -75,6 +77,7 @@
             overflow: hidden;
         }
 
+        /* Left: Visual Controller */
         .visual-area {
             flex: 1;
             position: relative;
@@ -102,7 +105,6 @@
             border: 1px solid var(--accent-color);
             color: var(--accent-color);
             font-size: 0.9rem;
-            padding: 10px 20px;
         }
         .select-all-btn:hover {
             background: rgba(0, 255, 204, 0.3);
@@ -163,8 +165,9 @@
             pointer-events: none; text-shadow: 0 0 2px #000;
         }
 
+        /* Right: Settings Panel */
         .settings-panel {
-            width: 350px;
+            width: 380px;
             background: var(--panel-bg);
             border-left: 1px solid var(--border-color);
             padding: 20px;
@@ -176,6 +179,7 @@
             position: relative;
             z-index: 50;
             flex-shrink: 0;
+            box-shadow: -5px 0 15px rgba(0,0,0,0.3);
         }
 
         .settings-panel.hidden { display: none; }
@@ -198,11 +202,12 @@
             background: #252525;
             padding: 15px;
             border-radius: 8px;
+            border: 1px solid #333;
         }
-        .control-group label { display: block; margin-bottom: 8px; font-size: 0.9rem; color: #ccc; }
+        .control-group label { display: block; margin-bottom: 8px; font-size: 0.9rem; color: #ccc; font-weight: 600; }
         
         .slider-row { display: flex; align-items: center; gap: 10px; }
-        input[type="range"] { flex: 1; cursor: pointer; }
+        input[type="range"] { flex: 1; cursor: pointer; accent-color: var(--accent-color); }
         input[type="number"] { width: 50px; background: #333; color: #fff; border: 1px solid #555; border-radius: 4px; padding: 4px; }
 
         .bar-container {
@@ -239,43 +244,56 @@
         .overlay-msg { font-size: 1.5rem; color: #fff; }
         .hidden { display: none; }
 
-        .modal {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.8);
+        /* Combo Editor Styles - Optimized */
+        .combo-tabs { display: flex; gap: 10px; margin-bottom: 15px; justify-content: center; }
+        .combo-tab { 
+            width: 40px; height: 40px; 
+            border-radius: 50%; 
+            background: #333; border: 2px solid #555;
             display: flex; justify-content: center; align-items: center;
-            z-index: 200;
-            backdrop-filter: blur(3px);
-            display: none;
+            cursor: pointer; font-size: 0.9rem; font-weight: bold;
+            transition: all 0.2s;
         }
-        .modal-content {
-            background: var(--panel-bg);
-            padding: 20px; border-radius: 8px;
-            width: 700px; max-height: 85vh; overflow-y: auto;
-            border: 1px solid var(--border-color);
-            box-shadow: 0 0 20px rgba(0,0,0,0.8);
+        .combo-tab:hover { border-color: #888; }
+        .combo-tab.active { 
+            background: var(--accent-color); color: #000; border-color: var(--accent-color); 
+            box-shadow: 0 0 10px rgba(0, 255, 204, 0.4);
         }
-        .modal-content h2 { margin-top: 0; border-bottom: 1px solid #444; padding-bottom: 10px; }
         
-        .macro-row {
-            display: flex; align-items: center; gap: 15px;
-            margin-bottom: 10px; padding: 10px;
-            background: #252525; border-radius: 4px;
+        .combo-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+        .combo-check { 
+            display: flex; align-items: center; justify-content: center;
+            background: #333; padding: 8px; border-radius: 6px; cursor: pointer;
+            font-size: 0.85rem; border: 1px solid #444; transition: all 0.1s;
         }
-        .macro-label { width: 70px; font-weight: bold; color: var(--accent-color); }
-        .macro-checks { display: flex; flex-wrap: wrap; gap: 8px; flex: 1; }
-        .check-item { 
-            display: flex; align-items: center; gap: 4px; 
-            font-size: 0.85rem; cursor: pointer;
-            background: #333; padding: 2px 6px; border-radius: 3px;
+        .combo-check:hover { background: #444; }
+        .combo-check.checked { background: #0066cc; border-color: #0088ff; color: #fff; font-weight: bold; }
+
+        /* Toast Notification */
+        #toast {
+            visibility: hidden;
+            min-width: 250px;
+            margin-left: -125px;
+            background-color: #333;
+            color: #fff;
+            text-align: center;
+            border-radius: 4px;
+            padding: 16px;
+            position: fixed;
+            z-index: 1000;
+            left: 50%;
+            bottom: 30px;
+            font-size: 1rem;
+            border: 1px solid var(--accent-color);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            opacity: 0;
+            transition: opacity 0.3s, bottom 0.3s;
         }
-        .check-item:hover { background: #444; }
-        
-        .close-btn { 
-            background: #28a745; margin-top: 20px; width: 100%; 
-            padding: 10px; font-size: 1rem; cursor: pointer;
-            color: white; font-weight: bold;
+        #toast.show {
+            visibility: visible;
+            opacity: 1;
+            bottom: 50px;
         }
-        .close-btn:hover { background: #34ce57; }
 
     </style>
 </head>
@@ -284,12 +302,12 @@
 <header>
     <h1>Magnetic Leverless</h1>
     <div class="toolbar">
-        <button onclick="openMacroEditor()">マクロ編集</button>
         <select id="socdSelect" disabled onchange="sendSOCD()">
             <option value="0">SOCD: ニュートラル (CPT)</option>
             <option value="1">SOCD: 上優先 (Hitbox)</option>
             <option value="2">SOCD: 後押し優先 (Last Win)</option>
         </select>
+        <button class="stop-input" id="btnToggleInput" disabled onclick="toggleInput()">入力停止</button>
         <button class="calib" id="btnCalib" disabled onclick="sendCalibrate()">キャリブレーション</button>
         <button class="save" id="btnSave" disabled onclick="sendSave()">設定を保存</button>
         <button class="connect" id="btnConnect" onclick="connectDevice()">接続</button>
@@ -297,14 +315,20 @@
 </header>
 
 <div class="main-container">
+    <!-- 左側: ビジュアル配置 -->
     <div class="visual-area" id="visualArea" onclick="deselectKey()">
         <button class="select-all-btn" onclick="toggleSelectAll(event)">全選択 / 解除</button>
-        <div class="board-container" id="board"></div>
-        <div id="disconnectOverlay" class="overlay hidden">
+        
+        <div class="board-container" id="board">
+            <!-- ボタンはJSで生成 -->
+        </div>
+        
+        <div id="disconnectOverlay" class="overlay">
             <div class="overlay-msg">デバイス未接続</div>
         </div>
     </div>
 
+    <!-- 右側: 設定パネル -->
     <div class="settings-panel" id="settingsPanel">
         <div id="emptyState" class="empty-state">
             <p>ボタンを選択して<br>設定を変更してください<br><small>(Ctrl+クリックで複数選択)</small></p>
@@ -318,7 +342,9 @@
 
             <div class="control-group">
                 <label>ボタン割り当て</label>
-                <select id="mapSelect" onchange="updateMapping()" style="width:100%"></select>
+                <select id="mapSelect" onchange="updateMapping()" style="width:100%">
+                    <!-- JSで生成 -->
+                </select>
             </div>
 
             <div class="control-group">
@@ -366,37 +392,42 @@
                 </div>
             </div>
         </div>
+
+        <!-- コンボエディタ -->
+        <div class="control-group" style="margin-top: 20px; border-top: 1px solid #444; padding-top: 15px;">
+            <label style="color:var(--accent-color); text-align:center; margin-bottom:15px;">同時押し設定 (C1-C4)</label>
+            <div class="combo-tabs" id="comboTabs">
+                <div class="combo-tab active" onclick="selectComboTab(0)">C1</div>
+                <div class="combo-tab" onclick="selectComboTab(1)">C2</div>
+                <div class="combo-tab" onclick="selectComboTab(2)">C3</div>
+                <div class="combo-tab" onclick="selectComboTab(3)">C4</div>
+            </div>
+            
+            <div class="combo-grid" id="comboGrid">
+                <!-- JSで生成 -->
+            </div>
+        </div>
     </div>
 </div>
 
-<div id="macroModal" class="modal" onclick="closeMacroEditor(event)">
-    <div class="modal-content" onclick="event.stopPropagation()">
-        <h2>マクロ編集 (同時押し設定)</h2>
-        <div id="macroList"></div>
-        <button class="close-btn" onclick="saveAndCloseMacro()">保存して閉じる</button>
-    </div>
-</div>
+<div id="toast">Notification Message</div>
 
 <script>
     // --- Constants & Config ---
     const CMD_GET_CONFIG    = 0x10;
+    const CMD_GET_COMBOS    = 0x11;
     const CMD_SET_CONFIG    = 0x20;
     const CMD_READ_SENSORS  = 0x30;
     const CMD_CALIBRATE     = 0x40;
     const CMD_SAVE_SETTINGS = 0x50;
     const CMD_SET_SOCD      = 0x60;
     const CMD_SET_MAPPING   = 0x70;
-    const CMD_SET_MACRO     = 0x80;
+    const CMD_STOP_INPUT    = 0x80;
+    const CMD_SET_COMBO     = 0x81;
+    
     const REPORT_ID = 0;
     const KEY_COUNT = 20;
-    const MAX_MACROS = 8;
-
-    const xinputBits = {
-        "UP": 0x0001, "DOWN": 0x0002, "LEFT": 0x0004, "RIGHT": 0x0008,
-        "START": 0x0010, "BACK": 0x0020, "L3": 0x0040, "R3": 0x0080,
-        "LB": 0x0100, "RB": 0x0200, "A": 0x1000, "B": 0x2000, "X": 0x4000, "Y": 0x8000
-    };
-    const macroTargets = ["UP","DOWN","LEFT","RIGHT","A","B","X","Y","LB","RB","LT","RT","L3","R3","START","BACK"];
+    const COMBO_COUNT = 4;
 
     const layoutData = [
         { "id": 0, "name": "Right", "left": "45.00%", "top": "36.82%" },
@@ -422,53 +453,41 @@
     ];
 
     const buttonMap = [
-        { id: 0, name: "-" },
+        { id: 0, name: "なし" },
         { id: 1, name: "UP" }, { id: 2, name: "DOWN" }, { id: 3, name: "LEFT" }, { id: 4, name: "RIGHT" },
         { id: 12, name: "A" }, { id: 13, name: "B" }, { id: 14, name: "X" }, { id: 15, name: "Y" },
         { id: 9, name: "LB" }, { id: 10, name: "RB" }, { id: 16, name: "LT" }, { id: 17, name: "RT" },
         { id: 5, name: "START" }, { id: 6, name: "BACK" }, { id: 11, name: "GUIDE" },
-        { id: 7, name: "L3" }, { id: 8, name: "R3" }
+        { id: 7, name: "L3" }, { id: 8, name: "R3" },
+        { id: 100, name: "C1" }, { id: 101, name: "C2" },
+        { id: 102, name: "C3" }, { id: 103, name: "C4" }
+    ];
+
+    const COMBO_OPTIONS = [
+        { name: "A", mask: 0x1000 }, { name: "B", mask: 0x2000 },
+        { name: "X", mask: 0x4000 }, { name: "Y", mask: 0x8000 },
+        { name: "RB", mask: 0x0200 }, { name: "LB", mask: 0x0100 },
+        { name: "RT", mask: 0, isTrig: true, trig: 'rt' }, { name: "LT", mask: 0, isTrig: true, trig: 'lt' },
+        { name: "UP", mask: 0x0001 }, { name: "DWN", mask: 0x0002 },
+        { name: "LFT", mask: 0x0004 }, { name: "RGT", mask: 0x0008 },
+        { name: "ST", mask: 0x0010 }, { name: "BK", mask: 0x0020 },
+        { name: "L3", mask: 0x0040 }, { name: "R3", mask: 0x0080 }
     ];
 
     // --- State ---
     let device = null;
     let selectedKeyIndices = [];
     let keysConfig = Array(KEY_COUNT).fill().map(() => ({ ap: 1.2, rt: 0.5, top: 0.2, btm: 0.1, map: 0 }));
-    let macros = Array(MAX_MACROS).fill(0);
-    let isDirty = false;
+    let isInputEnabled = true;
+    let comboSettings = Array(COMBO_COUNT).fill().map(() => ({ mask: 0, lt: 0, rt: 0 }));
+    let currentComboTab = 0;
 
     // --- Initialization ---
     window.onload = () => {
-        loadLocalSettings(); // ★追加: ローカルストレージから読み込み
         initBoard();
         initMapSelect();
-        initMacroEditor();
-        
-        window.onbeforeunload = (e) => {
-            if (isDirty) {
-                e.preventDefault();
-                e.returnValue = '';
-            }
-        };
+        renderComboGrid();
     };
-
-    // ★追加: ローカルストレージ保存/読み込み
-    function saveLocalSettings() {
-        const data = {
-            keysConfig: keysConfig,
-            macros: macros
-        };
-        localStorage.setItem('leverless_config', JSON.stringify(data));
-    }
-
-    function loadLocalSettings() {
-        const data = localStorage.getItem('leverless_config');
-        if (data) {
-            const parsed = JSON.parse(data);
-            if (parsed.keysConfig) keysConfig = parsed.keysConfig;
-            if (parsed.macros) macros = parsed.macros;
-        }
-    }
 
     function initBoard() {
         const board = document.getElementById('board');
@@ -491,7 +510,6 @@
             `;
             board.appendChild(btn);
         });
-        updateButtonLabels(); // 初期表示更新
     }
 
     function initMapSelect() {
@@ -502,49 +520,14 @@
             opt.innerText = b.name;
             sel.appendChild(opt);
         });
-        for(let i=0; i<MAX_MACROS; i++) {
-            const opt = document.createElement('option');
-            opt.value = 50 + i;
-            opt.innerText = `Macro ${i+1}`;
-            sel.appendChild(opt);
-        }
-    }
-
-    function initMacroEditor() {
-        const list = document.getElementById('macroList');
-        if (!list) return;
-        list.innerHTML = '';
-        for(let i=0; i<MAX_MACROS; i++) {
-            const row = document.createElement('div');
-            row.className = 'macro-row';
-            
-            let html = `<div class="macro-label">Macro ${i+1}</div><div class="macro-checks">`;
-            macroTargets.forEach(t => {
-                // ローカルストレージから復元
-                let checked = false;
-                if (t === "LT") checked = (macros[i] & (1 << 8)) !== 0;
-                else if (t === "RT") checked = (macros[i] & (1 << 16)) !== 0;
-                else checked = (macros[i] & xinputBits[t]) !== 0;
-
-                html += `<label class="check-item"><input type="checkbox" id="m-${i}-${t}" ${checked ? 'checked' : ''}> ${t}</label>`;
-            });
-            html += `</div>`;
-            row.innerHTML = html;
-            list.appendChild(row);
-        }
     }
 
     function updateButtonLabels() {
         for(let i=0; i<KEY_COUNT; i++) {
             const mapId = keysConfig[i].map;
-            let name = "???";
-            if (mapId >= 50 && mapId < 50 + MAX_MACROS) {
-                name = `M${mapId - 49}`;
-            } else {
-                const mapObj = buttonMap.find(b => b.id === mapId);
-                name = mapObj ? mapObj.name : "-";
-            }
-            document.getElementById(`lbl-map-${i}`).innerText = name;
+            const mapObj = buttonMap.find(b => b.id === mapId);
+            const name = mapObj ? mapObj.name : "???";
+            document.getElementById(`lbl-map-${i}`).innerText = (mapId === 0) ? "-" : name;
         }
     }
 
@@ -627,6 +610,10 @@
 
         document.getElementById('mapSelect').value = conf.map;
 
+        if (conf.map >= 100 && conf.map <= 103) {
+            selectComboTab(conf.map - 100);
+        }
+
         updateVisLines(conf.ap, conf.rt);
     }
 
@@ -665,8 +652,6 @@
 
         const lastId = selectedKeyIndices[selectedKeyIndices.length - 1];
         updateVisLines(keysConfig[lastId].ap, keysConfig[lastId].rt);
-        isDirty = true;
-        saveLocalSettings(); // ★追加: 変更時にローカル保存
     }
 
     function updateMapping() {
@@ -676,8 +661,10 @@
         keysConfig[id].map = val;
         sendMapping(id, val);
         updateButtonLabels();
-        isDirty = true;
-        saveLocalSettings(); // ★追加
+
+        if (val >= 100 && val <= 103) {
+            selectComboTab(val - 100);
+        }
     }
 
     function updateVisLines(ap, rt) {
@@ -685,33 +672,59 @@
         document.getElementById('visApLine').style.bottom = `${apPct}%`;
     }
 
-    // --- Macro Editor ---
-    function openMacroEditor() {
-        document.getElementById('macroModal').style.display = 'flex';
+    // --- Combo Editor Logic ---
+    function selectComboTab(idx) {
+        currentComboTab = idx;
+        const tabs = document.querySelectorAll('.combo-tab');
+        tabs.forEach((t, i) => {
+            if (i === idx) t.classList.add('active');
+            else t.classList.remove('active');
+        });
+        renderComboGrid();
     }
-    
-    function closeMacroEditor(e, force) {
-        if (force || e.target.id === 'macroModal') {
-            document.getElementById('macroModal').style.display = 'none';
+
+    function toggleComboBit(optIdx) {
+        const opt = COMBO_OPTIONS[optIdx];
+        const setting = comboSettings[currentComboTab];
+        
+        if (opt.isTrig) {
+            if (opt.trig === 'lt') setting.lt = setting.lt ? 0 : 1;
+            if (opt.trig === 'rt') setting.rt = setting.rt ? 0 : 1;
+        } else {
+            setting.mask ^= opt.mask;
         }
+        renderComboGrid();
+        sendCombo(currentComboTab);
     }
-    
-    function saveAndCloseMacro() {
-        for(let i=0; i<MAX_MACROS; i++) {
-            let val = 0;
-            macroTargets.forEach(t => {
-                if (document.getElementById(`m-${i}-${t}`).checked) {
-                    if (t === "LT") val |= (1 << 8);
-                    else if (t === "RT") val |= (1 << 16);
-                    else val |= xinputBits[t];
-                }
-            });
-            macros[i] = val;
-            sendMacro(i, val);
-        }
-        document.getElementById('macroModal').style.display = 'none';
-        isDirty = true;
-        saveLocalSettings(); // ★追加
+
+    function renderComboGrid() {
+        const container = document.getElementById('comboGrid');
+        container.innerHTML = '';
+        const setting = comboSettings[currentComboTab];
+
+        COMBO_OPTIONS.forEach((opt, idx) => {
+            let isChecked = false;
+            if (opt.isTrig) {
+                if (opt.trig === 'lt') isChecked = (setting.lt === 1);
+                if (opt.trig === 'rt') isChecked = (setting.rt === 1);
+            } else {
+                isChecked = (setting.mask & opt.mask) !== 0;
+            }
+
+            const div = document.createElement('div');
+            div.className = isChecked ? 'combo-check checked' : 'combo-check';
+            div.onclick = () => toggleComboBit(idx);
+            div.innerText = opt.name;
+            container.appendChild(div);
+        });
+    }
+
+    // --- Toast Notification ---
+    function showToast(message) {
+        const toast = document.getElementById("toast");
+        toast.innerText = message;
+        toast.className = "show";
+        setTimeout(function(){ toast.className = toast.className.replace("show", ""); }, 3000);
     }
 
     // --- WebHID Communication ---
@@ -728,21 +741,24 @@
                 device = devices[0];
                 await device.open();
                 
+                document.getElementById('disconnectOverlay').classList.add('hidden');
                 document.getElementById('btnConnect').innerText = "接続済み";
                 document.getElementById('btnConnect').disabled = true;
                 document.getElementById('btnCalib').disabled = false;
                 document.getElementById('btnSave').disabled = false;
                 document.getElementById('socdSelect').disabled = false;
+                document.getElementById('btnToggleInput').disabled = false;
 
                 device.addEventListener('inputreport', handleInputReport);
                 await readConfig();
+                await readCombos();
                 startPolling();
                 deselectKey();
-                isDirty = false;
+                showToast("デバイスに接続しました");
             }
         } catch (e) {
             console.error(e);
-            alert("接続できませんでした");
+            showToast("接続できませんでした");
         }
     }
 
@@ -760,6 +776,12 @@
     async function readConfig() {
         const data = new Uint8Array(64);
         data[0] = CMD_GET_CONFIG;
+        await device.sendReport(REPORT_ID, data);
+    }
+
+    async function readCombos() {
+        const data = new Uint8Array(64);
+        data[0] = CMD_GET_COMBOS;
         await device.sendReport(REPORT_ID, data);
     }
 
@@ -821,7 +843,15 @@
             }
             deselectKey();
             updateButtonLabels();
-            saveLocalSettings(); // ★追加
+        }
+        else if (cmd === CMD_GET_COMBOS) {
+            for (let i = 0; i < COMBO_COUNT; i++) {
+                const offset = 1 + (i * 4);
+                comboSettings[i].mask = data.getUint8(offset) | (data.getUint8(offset+1) << 8);
+                comboSettings[i].lt = data.getUint8(offset+2);
+                comboSettings[i].rt = data.getUint8(offset+3);
+            }
+            renderComboGrid();
         }
     }
 
@@ -836,7 +866,6 @@
         data[4] = Math.round(conf.top * 100);
         data[5] = Math.round(conf.btm * 100);
         await device.sendReport(REPORT_ID, data);
-        isDirty = true;
     }
 
     async function sendMapping(id, mapVal) {
@@ -845,19 +874,6 @@
         data[0] = CMD_SET_MAPPING;
         data[1] = id;
         data[2] = mapVal;
-        await device.sendReport(REPORT_ID, data);
-        isDirty = true;
-    }
-
-    async function sendMacro(id, val) {
-        if (!device) return;
-        const data = new Uint8Array(64);
-        data[0] = CMD_SET_MACRO;
-        data[1] = id;
-        data[2] = val & 0xFF;
-        data[3] = (val >> 8) & 0xFF;
-        data[4] = (val >> 16) & 0xFF;
-        data[5] = (val >> 24) & 0xFF;
         await device.sendReport(REPORT_ID, data);
     }
 
@@ -868,7 +884,6 @@
         data[0] = CMD_SET_SOCD;
         data[1] = parseInt(val);
         await device.sendReport(REPORT_ID, data);
-        isDirty = true;
     }
 
     async function sendCalibrate() {
@@ -876,7 +891,7 @@
         const data = new Uint8Array(64);
         data[0] = CMD_CALIBRATE;
         await device.sendReport(REPORT_ID, data);
-        alert("キャリブレーション完了");
+        showToast("キャリブレーション完了");
     }
 
     async function sendSave() {
@@ -884,8 +899,42 @@
         const data = new Uint8Array(64);
         data[0] = CMD_SAVE_SETTINGS;
         await device.sendReport(REPORT_ID, data);
-        alert("設定を保存しました");
-        isDirty = false;
+        showToast("設定を保存しました");
+    }
+
+    async function toggleInput() {
+        if (!device) return;
+        isInputEnabled = !isInputEnabled;
+        
+        const data = new Uint8Array(64);
+        data[0] = CMD_STOP_INPUT;
+        data[1] = isInputEnabled ? 1 : 0;
+        await device.sendReport(REPORT_ID, data);
+
+        const btn = document.getElementById('btnToggleInput');
+        if (isInputEnabled) {
+            btn.innerText = "入力停止";
+            btn.classList.remove('active');
+        } else {
+            btn.innerText = "入力再開";
+            btn.classList.add('active');
+        }
+    }
+
+    async function sendCombo(idx) {
+        if (!device) return;
+        
+        const setting = comboSettings[idx];
+        const data = new Uint8Array(64);
+        data[0] = CMD_SET_COMBO;
+        data[1] = idx; 
+        
+        data[2] = setting.mask & 0xFF;
+        data[3] = (setting.mask >> 8) & 0xFF;
+        data[4] = setting.lt;
+        data[5] = setting.rt;
+        
+        await device.sendReport(REPORT_ID, data);
     }
 </script>
 </body>
