@@ -63,11 +63,34 @@
   - > [!IMPORTANT]
     > 起動時にキャリブレーションを行うため、指を離すまで入力は反映されません。
 
+## 導入手順
+
+### 1. ファームウェアの書き込み
+1. [STM32CubeProgrammer](https://www.st.com/ja/development-tools/stm32cubeprog.html) をインストールします。
+2. ST-Link等の書き込みデバッガを使用して、PCと基板を接続します。
+3. ビルド済みのバイナリファイル（`build/main.bin`）を読み込みます。
+4. `Start Programming` を実行してインストールを完了させてください。
+
+### 2. 起動モードの選択
+本デバイスには2つの動作モードがあります。
+
+- **ゲームモード (通常起動):**
+  そのままUSBを接続します。Windowsから「Xbox 360 Controller」として認識され、すぐにゲームで使用可能です。
+- **設定モード (ボタン押下起動):**
+  **UPボタン**を押しながらUSBを接続し、**数秒待ってから指を離します**。
+  デバイスマネージャー等でカスタムHIDデバイスとして認識され、ブラウザからの設定が可能になります。
+  *(※起動時にキャリブレーションを行うため、指を離すまで入力は反映されません)*
+
 ### 3. Web Configurator による設定
 1. 設定モードでデバイスをPCに接続します。
-2. Google Chrome または Microsoft Edge で以下の設定ページを開きます。
-   - **[Web Configurator (設定ツール)](https://ltsul4.github.io/hallsenser-leverless-439/WebDriver.html)**
-   *(※ページが表示されない場合は、リポジトリ内の `WebDriver.html` を直接開いてください)*
+2. 使用しているキースイッチに合わせて、以下のいずれかの設定ページをブラウザ（Chrome/Edge）で開きます。
+
+   - **通常版 (3.2mm / Jade Ultra 等):**
+     [https://ltsul4.github.io/hallsenser-leverless-439/WebDriver.html](https://ltsul4.github.io/hallsenser-leverless-439/WebDriver.html)
+
+   - **特別版 (3.5mm / Jade Pro 専用):**
+     [https://ltsul4.github.io/hallsenser-leverless-439/WebDriver3.5.html](https://ltsul4.github.io/hallsenser-leverless-439/WebDriver3.5.html)
+
 3. 「接続」ボタンを押し、リストから該当するデバイス（Vendor ID: `0x0483` / Product ID: `0x5751`）を選択します。
 4. 画面上のビジュアライザーで各キーの動きを確認しながら、AP（作動点）やRT（感度）を調整してください。
 5. 設定完了後、「設定を保存」を押すことでマイコン内部のFlashメモリに設定が永続保存されます。
