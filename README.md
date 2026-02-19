@@ -66,7 +66,7 @@
 ### 3. Web Configurator による設定
 1. 設定モードでデバイスをPCに接続します。
 2. Google Chrome または Microsoft Edge で以下の設定ページを開きます。
-   - **[Web Configurator (設定ツール)](https://ltsul4.github.io/hallsenser-leverless-439/)**
+   - **[Web Configurator (設定ツール)](https://ltsul4.github.io/hallsenser-leverless-439/WebDriver.html)**
    *(※ページが表示されない場合は、リポジトリ内の `WebDriver.html` を直接開いてください)*
 3. 「接続」ボタンを押し、リストから該当するデバイス（Vendor ID: `0x0483` / Product ID: `0x5751`）を選択します。
 4. 画面上のビジュアライザーで各キーの動きを確認しながら、AP（作動点）やRT（感度）を調整してください。
