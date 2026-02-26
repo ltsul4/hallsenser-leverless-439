@@ -30,8 +30,7 @@
 ### 主要コンポーネント
 - **MCU:** STM32F303CBT6
 - **センサー:** GH39F ホールセンサー
-- **スイッチ:** 
-  - デフォルト: Gateron Magnetic Jade Ultra (3.2mmストローク)
+- **スイッチ:** - デフォルト: Gateron Magnetic Jade Ultra (3.2mmストローク)
   - 特別仕様: Gateron Magnetic Jade Pro (3.5mmストローク)
 - **マルチプレクサ:** ADG708
 
@@ -45,13 +44,19 @@
 
 ## 導入手順
 
-## 導入手順
-
 ### 1. ファームウェアの書き込み
-1. [STM32CubeProgrammer](https://www.st.com/ja/development-tools/stm32cubeprog.html) をインストールします。
-2. ST-Link等の書き込みデバッガを使用して、PCと基板を接続します。
-3. ビルド済みのバイナリファイル（`build/main.bin`）を読み込みます。
-4. `Start Programming` を実行してインストールを完了させてください。
+1. [STM32CubeProgrammer](https://www.st.com/ja/development-tools/stm32cubeprog.html) をダウンロードしてPCにインストールします。
+2. PCと基板をUSBケーブルで接続し、STM32CubeProgrammerを起動します。
+3. 画面右側の接続メニューから「USB」を選択し、「Port」のドロップダウンから適切なポート（例: USB1）を選んだ後、緑色の「Connect」ボタンをクリックして基板と接続します。
+
+![STM32CubeProgrammerの接続設定](./document/SS_1.png)
+
+4. 接続が成功したら、画面左上の「Open file」タブをクリックします。
+5. ファイル選択ダイアログが開くので、ビルド済みの `.bin` ファイル（例: `Leverless_Controller.bin`）を選択して開きます。
+
+![バイナリファイルの選択](./document/SS_2.png)
+
+6. ファイルを読み込んだ後、「Download」ボタンをクリックしてファームウェアの書き込み（インストール）を実行します。完了メッセージが表示されれば、デバイスの初期セットアップは完了です！
 
 ### 2. 起動モードの選択
 本デバイスには2つの動作モードがあります。
@@ -68,14 +73,15 @@
 2. 使用しているキースイッチに合わせて、以下のいずれかの設定ページをブラウザ（Chrome/Edge）で開きます。
 
    - **通常版 (3.2mm / Jade Ultra 等):**
-     [https://ltsul4.github.io/hallsenser-leverless-439/WebDriver.html](https://ltsul4.github.io/hallsenser-leverless-439/WebDriver.html)
+     [https://ltsul4.github.io/hallsenser-leverless-439/WebDriver/WebDriver.html](https://ltsul4.github.io/hallsenser-leverless-439/WebDriver/WebDriver.html)
 
    - **特別版 (3.5mm / Jade Pro 専用):**
-     [https://ltsul4.github.io/hallsenser-leverless-439/WebDriver3.5.html](https://ltsul4.github.io/hallsenser-leverless-439/WebDriver3.5.html)
+     [https://ltsul4.github.io/hallsenser-leverless-439/WebDriver/WebDriver3.5.html](https://ltsul4.github.io/hallsenser-leverless-439/WebDriver/WebDriver3.5.html)
 
 3. 「接続」ボタンを押し、リストから該当するデバイス（Vendor ID: `0x0483` / Product ID: `0x5751`）を選択します。
 4. 画面上のビジュアライザーで各キーの動きを確認しながら、AP（作動点）やRT（感度）を調整してください。
 5. 設定完了後、「設定を保存」を押すことでマイコン内部のFlashメモリに設定が永続保存されます。
+
 ---
 
 ## 開発状況
