@@ -1,4 +1,4 @@
-ARM GAS  C:\Users\naoki\AppData\Local\Temp\ccoue0ZQ.s 			page 1
+ARM GAS  C:\Users\naoki\AppData\Local\Temp\ccvKOySj.s 			page 1
 
 
    1              		.cpu cortex-m4
@@ -58,7 +58,7 @@ ARM GAS  C:\Users\naoki\AppData\Local\Temp\ccoue0ZQ.s 			page 1
   27:USB_DEVICE/App/usbd_desc.c **** uint8_t * USBD_FS_SerialStrDescriptor(USBD_SpeedTypeDef speed, uint16_t *length);
   28:USB_DEVICE/App/usbd_desc.c **** uint8_t * USBD_FS_ConfigStrDescriptor(USBD_SpeedTypeDef speed, uint16_t *length);
   29:USB_DEVICE/App/usbd_desc.c **** uint8_t * USBD_FS_InterfaceStrDescriptor(USBD_SpeedTypeDef speed, uint16_t *length);
-ARM GAS  C:\Users\naoki\AppData\Local\Temp\ccoue0ZQ.s 			page 2
+ARM GAS  C:\Users\naoki\AppData\Local\Temp\ccvKOySj.s 			page 2
 
 
   30:USB_DEVICE/App/usbd_desc.c **** 
@@ -118,7 +118,7 @@ ARM GAS  C:\Users\naoki\AppData\Local\Temp\ccoue0ZQ.s 			page 1
   41              		.loc 1 72 7 is_stmt 1 view .LVU4
   42              		.loc 1 72 29 is_stmt 0 view .LVU5
   43 0006 104B     		ldr	r3, .L4+4
-ARM GAS  C:\Users\naoki\AppData\Local\Temp\ccoue0ZQ.s 			page 3
+ARM GAS  C:\Users\naoki\AppData\Local\Temp\ccvKOySj.s 			page 3
 
 
   44 0008 FF22     		movs	r2, #255
@@ -178,7 +178,7 @@ ARM GAS  C:\Users\naoki\AppData\Local\Temp\ccoue0ZQ.s 			page 1
   76              	.LVL1:
   77              		.loc 1 94 1 view .LVU22
   78 0026 7047     		bx	lr
-ARM GAS  C:\Users\naoki\AppData\Local\Temp\ccoue0ZQ.s 			page 4
+ARM GAS  C:\Users\naoki\AppData\Local\Temp\ccvKOySj.s 			page 4
 
 
   79              	.LVL2:
@@ -238,7 +238,7 @@ ARM GAS  C:\Users\naoki\AppData\Local\Temp\ccoue0ZQ.s 			page 1
  120              		.syntax unified
  121              		.thumb
  122              		.thumb_func
-ARM GAS  C:\Users\naoki\AppData\Local\Temp\ccoue0ZQ.s 			page 5
+ARM GAS  C:\Users\naoki\AppData\Local\Temp\ccvKOySj.s 			page 5
 
 
  124              	USBD_FS_LangIDStrDescriptor:
@@ -298,7 +298,7 @@ ARM GAS  C:\Users\naoki\AppData\Local\Temp\ccoue0ZQ.s 			page 1
  117:USB_DEVICE/App/usbd_desc.c ****   deviceserial0 = *(uint32_t *) DEVICE_ID1;
  118:USB_DEVICE/App/usbd_desc.c ****   deviceserial1 = *(uint32_t *) DEVICE_ID2;
  119:USB_DEVICE/App/usbd_desc.c ****   deviceserial2 = *(uint32_t *) DEVICE_ID3;
-ARM GAS  C:\Users\naoki\AppData\Local\Temp\ccoue0ZQ.s 			page 6
+ARM GAS  C:\Users\naoki\AppData\Local\Temp\ccvKOySj.s 			page 6
 
 
  120:USB_DEVICE/App/usbd_desc.c ****   deviceserial0 += deviceserial2;
@@ -358,7 +358,7 @@ ARM GAS  C:\Users\naoki\AppData\Local\Temp\ccoue0ZQ.s 			page 1
  196 0024 0133     		adds	r3, r3, #1
  197              	.LVL8:
  129:USB_DEVICE/App/usbd_desc.c ****     if (((value >> 28)) < 0xA) pbuf[2 * idx] = (value >> 28) + '0';
-ARM GAS  C:\Users\naoki\AppData\Local\Temp\ccoue0ZQ.s 			page 7
+ARM GAS  C:\Users\naoki\AppData\Local\Temp\ccvKOySj.s 			page 7
 
 
  198              		.loc 1 129 31 is_stmt 0 discriminator 2 view .LVU59
@@ -418,7 +418,7 @@ ARM GAS  C:\Users\naoki\AppData\Local\Temp\ccoue0ZQ.s 			page 1
  242              		.loc 1 117 3 view .LVU71
  117:USB_DEVICE/App/usbd_desc.c ****   deviceserial0 = *(uint32_t *) DEVICE_ID1;
  243              		.loc 1 117 17 is_stmt 0 view .LVU72
-ARM GAS  C:\Users\naoki\AppData\Local\Temp\ccoue0ZQ.s 			page 8
+ARM GAS  C:\Users\naoki\AppData\Local\Temp\ccvKOySj.s 			page 8
 
 
  244 0000 0B4B     		ldr	r3, .L26
@@ -478,7 +478,7 @@ ARM GAS  C:\Users\naoki\AppData\Local\Temp\ccoue0ZQ.s 			page 1
  285              		.loc 1 125 1 is_stmt 0 view .LVU85
  286 002e 10BD     		pop	{r4, pc}
  287              	.LVL17:
-ARM GAS  C:\Users\naoki\AppData\Local\Temp\ccoue0ZQ.s 			page 9
+ARM GAS  C:\Users\naoki\AppData\Local\Temp\ccvKOySj.s 			page 9
 
 
  288              	.L27:
@@ -538,7 +538,7 @@ ARM GAS  C:\Users\naoki\AppData\Local\Temp\ccoue0ZQ.s 			page 1
  337              	.LC0:
  338 0000 4D61676E 		.ascii	"Magnetic Leverless\000"
  338      65746963 
-ARM GAS  C:\Users\naoki\AppData\Local\Temp\ccoue0ZQ.s 			page 10
+ARM GAS  C:\Users\naoki\AppData\Local\Temp\ccvKOySj.s 			page 10
 
 
  338      204C6576 
@@ -598,7 +598,7 @@ ARM GAS  C:\Users\naoki\AppData\Local\Temp\ccoue0ZQ.s 			page 1
  385 0000 53544D33 		.ascii	"STM32 Community\000"
  385      3220436F 
  385      6D6D756E 
-ARM GAS  C:\Users\naoki\AppData\Local\Temp\ccoue0ZQ.s 			page 11
+ARM GAS  C:\Users\naoki\AppData\Local\Temp\ccvKOySj.s 			page 11
 
 
  385      69747900 
@@ -658,7 +658,7 @@ ARM GAS  C:\Users\naoki\AppData\Local\Temp\ccoue0ZQ.s 			page 1
  432      436F6E66 
  432      696700
  433              		.section	.text.USBD_FS_ConfigStrDescriptor,"ax",%progbits
-ARM GAS  C:\Users\naoki\AppData\Local\Temp\ccoue0ZQ.s 			page 12
+ARM GAS  C:\Users\naoki\AppData\Local\Temp\ccvKOySj.s 			page 12
 
 
  434              		.align	1
@@ -718,7 +718,7 @@ ARM GAS  C:\Users\naoki\AppData\Local\Temp\ccoue0ZQ.s 			page 1
  479      00
  480              		.section	.text.USBD_FS_InterfaceStrDescriptor,"ax",%progbits
  481              		.align	1
-ARM GAS  C:\Users\naoki\AppData\Local\Temp\ccoue0ZQ.s 			page 13
+ARM GAS  C:\Users\naoki\AppData\Local\Temp\ccvKOySj.s 			page 13
 
 
  482              		.global	USBD_FS_InterfaceStrDescriptor
@@ -778,7 +778,7 @@ ARM GAS  C:\Users\naoki\AppData\Local\Temp\ccoue0ZQ.s 			page 1
  530      00000000 
  530      00000000 
  531              		.global	USBD_StrDesc
-ARM GAS  C:\Users\naoki\AppData\Local\Temp\ccoue0ZQ.s 			page 14
+ARM GAS  C:\Users\naoki\AppData\Local\Temp\ccvKOySj.s 			page 14
 
 
  532              		.section	.bss.USBD_StrDesc,"aw",%nobits
@@ -822,51 +822,51 @@ ARM GAS  C:\Users\naoki\AppData\Local\Temp\ccoue0ZQ.s 			page 1
  571              		.file 5 "Core/Inc/main.h"
  572              		.file 6 "USB_DEVICE/App/usbd_desc.h"
  573              		.file 7 "Middlewares/ST/STM32_USB_Device_Library/Core/Inc/usbd_ctlreq.h"
-ARM GAS  C:\Users\naoki\AppData\Local\Temp\ccoue0ZQ.s 			page 15
+ARM GAS  C:\Users\naoki\AppData\Local\Temp\ccvKOySj.s 			page 15
 
 
 DEFINED SYMBOLS
                             *ABS*:00000000 usbd_desc.c
-C:\Users\naoki\AppData\Local\Temp\ccoue0ZQ.s:21     .text.USBD_FS_DeviceDescriptor:00000000 $t
-C:\Users\naoki\AppData\Local\Temp\ccoue0ZQ.s:27     .text.USBD_FS_DeviceDescriptor:00000000 USBD_FS_DeviceDescriptor
-C:\Users\naoki\AppData\Local\Temp\ccoue0ZQ.s:112    .text.USBD_FS_DeviceDescriptor:00000044 $d
-C:\Users\naoki\AppData\Local\Temp\ccoue0ZQ.s:550    .data.USBD_FS_DeviceDesc:00000000 USBD_FS_DeviceDesc
-C:\Users\naoki\AppData\Local\Temp\ccoue0ZQ.s:118    .text.USBD_FS_LangIDStrDescriptor:00000000 $t
-C:\Users\naoki\AppData\Local\Temp\ccoue0ZQ.s:124    .text.USBD_FS_LangIDStrDescriptor:00000000 USBD_FS_LangIDStrDescriptor
-C:\Users\naoki\AppData\Local\Temp\ccoue0ZQ.s:145    .text.USBD_FS_LangIDStrDescriptor:00000008 $d
-C:\Users\naoki\AppData\Local\Temp\ccoue0ZQ.s:543    .data.USBD_LangIDDesc:00000000 USBD_LangIDDesc
-C:\Users\naoki\AppData\Local\Temp\ccoue0ZQ.s:150    .text.IntToUnicode:00000000 $t
-C:\Users\naoki\AppData\Local\Temp\ccoue0ZQ.s:155    .text.IntToUnicode:00000000 IntToUnicode
-C:\Users\naoki\AppData\Local\Temp\ccoue0ZQ.s:230    .text.Get_SerialNum:00000000 $t
-C:\Users\naoki\AppData\Local\Temp\ccoue0ZQ.s:235    .text.Get_SerialNum:00000000 Get_SerialNum
-C:\Users\naoki\AppData\Local\Temp\ccoue0ZQ.s:292    .text.Get_SerialNum:00000030 $d
-C:\Users\naoki\AppData\Local\Temp\ccoue0ZQ.s:528    .data.USBD_StringSerial:00000000 USBD_StringSerial
-C:\Users\naoki\AppData\Local\Temp\ccoue0ZQ.s:298    .text.USBD_FS_SerialStrDescriptor:00000000 $t
-C:\Users\naoki\AppData\Local\Temp\ccoue0ZQ.s:304    .text.USBD_FS_SerialStrDescriptor:00000000 USBD_FS_SerialStrDescriptor
-C:\Users\naoki\AppData\Local\Temp\ccoue0ZQ.s:331    .text.USBD_FS_SerialStrDescriptor:00000010 $d
-C:\Users\naoki\AppData\Local\Temp\ccoue0ZQ.s:336    .rodata.USBD_FS_ProductStrDescriptor.str1.4:00000000 $d
-C:\Users\naoki\AppData\Local\Temp\ccoue0ZQ.s:340    .text.USBD_FS_ProductStrDescriptor:00000000 $t
-C:\Users\naoki\AppData\Local\Temp\ccoue0ZQ.s:346    .text.USBD_FS_ProductStrDescriptor:00000000 USBD_FS_ProductStrDescriptor
-C:\Users\naoki\AppData\Local\Temp\ccoue0ZQ.s:377    .text.USBD_FS_ProductStrDescriptor:00000014 $d
-C:\Users\naoki\AppData\Local\Temp\ccoue0ZQ.s:536    .bss.USBD_StrDesc:00000000 USBD_StrDesc
-C:\Users\naoki\AppData\Local\Temp\ccoue0ZQ.s:383    .rodata.USBD_FS_ManufacturerStrDescriptor.str1.4:00000000 $d
-C:\Users\naoki\AppData\Local\Temp\ccoue0ZQ.s:387    .text.USBD_FS_ManufacturerStrDescriptor:00000000 $t
-C:\Users\naoki\AppData\Local\Temp\ccoue0ZQ.s:393    .text.USBD_FS_ManufacturerStrDescriptor:00000000 USBD_FS_ManufacturerStrDescriptor
-C:\Users\naoki\AppData\Local\Temp\ccoue0ZQ.s:424    .text.USBD_FS_ManufacturerStrDescriptor:00000014 $d
-C:\Users\naoki\AppData\Local\Temp\ccoue0ZQ.s:430    .rodata.USBD_FS_ConfigStrDescriptor.str1.4:00000000 $d
-C:\Users\naoki\AppData\Local\Temp\ccoue0ZQ.s:434    .text.USBD_FS_ConfigStrDescriptor:00000000 $t
-C:\Users\naoki\AppData\Local\Temp\ccoue0ZQ.s:440    .text.USBD_FS_ConfigStrDescriptor:00000000 USBD_FS_ConfigStrDescriptor
-C:\Users\naoki\AppData\Local\Temp\ccoue0ZQ.s:471    .text.USBD_FS_ConfigStrDescriptor:00000014 $d
-C:\Users\naoki\AppData\Local\Temp\ccoue0ZQ.s:477    .rodata.USBD_FS_InterfaceStrDescriptor.str1.4:00000000 $d
-C:\Users\naoki\AppData\Local\Temp\ccoue0ZQ.s:481    .text.USBD_FS_InterfaceStrDescriptor:00000000 $t
-C:\Users\naoki\AppData\Local\Temp\ccoue0ZQ.s:487    .text.USBD_FS_InterfaceStrDescriptor:00000000 USBD_FS_InterfaceStrDescriptor
-C:\Users\naoki\AppData\Local\Temp\ccoue0ZQ.s:518    .text.USBD_FS_InterfaceStrDescriptor:00000014 $d
-C:\Users\naoki\AppData\Local\Temp\ccoue0ZQ.s:525    .data.USBD_StringSerial:00000000 $d
-C:\Users\naoki\AppData\Local\Temp\ccoue0ZQ.s:533    .bss.USBD_StrDesc:00000000 $d
-C:\Users\naoki\AppData\Local\Temp\ccoue0ZQ.s:540    .data.USBD_LangIDDesc:00000000 $d
-C:\Users\naoki\AppData\Local\Temp\ccoue0ZQ.s:547    .data.USBD_FS_DeviceDesc:00000000 $d
-C:\Users\naoki\AppData\Local\Temp\ccoue0ZQ.s:558    .data.FS_Desc:00000000 FS_Desc
-C:\Users\naoki\AppData\Local\Temp\ccoue0ZQ.s:555    .data.FS_Desc:00000000 $d
+C:\Users\naoki\AppData\Local\Temp\ccvKOySj.s:21     .text.USBD_FS_DeviceDescriptor:00000000 $t
+C:\Users\naoki\AppData\Local\Temp\ccvKOySj.s:27     .text.USBD_FS_DeviceDescriptor:00000000 USBD_FS_DeviceDescriptor
+C:\Users\naoki\AppData\Local\Temp\ccvKOySj.s:112    .text.USBD_FS_DeviceDescriptor:00000044 $d
+C:\Users\naoki\AppData\Local\Temp\ccvKOySj.s:550    .data.USBD_FS_DeviceDesc:00000000 USBD_FS_DeviceDesc
+C:\Users\naoki\AppData\Local\Temp\ccvKOySj.s:118    .text.USBD_FS_LangIDStrDescriptor:00000000 $t
+C:\Users\naoki\AppData\Local\Temp\ccvKOySj.s:124    .text.USBD_FS_LangIDStrDescriptor:00000000 USBD_FS_LangIDStrDescriptor
+C:\Users\naoki\AppData\Local\Temp\ccvKOySj.s:145    .text.USBD_FS_LangIDStrDescriptor:00000008 $d
+C:\Users\naoki\AppData\Local\Temp\ccvKOySj.s:543    .data.USBD_LangIDDesc:00000000 USBD_LangIDDesc
+C:\Users\naoki\AppData\Local\Temp\ccvKOySj.s:150    .text.IntToUnicode:00000000 $t
+C:\Users\naoki\AppData\Local\Temp\ccvKOySj.s:155    .text.IntToUnicode:00000000 IntToUnicode
+C:\Users\naoki\AppData\Local\Temp\ccvKOySj.s:230    .text.Get_SerialNum:00000000 $t
+C:\Users\naoki\AppData\Local\Temp\ccvKOySj.s:235    .text.Get_SerialNum:00000000 Get_SerialNum
+C:\Users\naoki\AppData\Local\Temp\ccvKOySj.s:292    .text.Get_SerialNum:00000030 $d
+C:\Users\naoki\AppData\Local\Temp\ccvKOySj.s:528    .data.USBD_StringSerial:00000000 USBD_StringSerial
+C:\Users\naoki\AppData\Local\Temp\ccvKOySj.s:298    .text.USBD_FS_SerialStrDescriptor:00000000 $t
+C:\Users\naoki\AppData\Local\Temp\ccvKOySj.s:304    .text.USBD_FS_SerialStrDescriptor:00000000 USBD_FS_SerialStrDescriptor
+C:\Users\naoki\AppData\Local\Temp\ccvKOySj.s:331    .text.USBD_FS_SerialStrDescriptor:00000010 $d
+C:\Users\naoki\AppData\Local\Temp\ccvKOySj.s:336    .rodata.USBD_FS_ProductStrDescriptor.str1.4:00000000 $d
+C:\Users\naoki\AppData\Local\Temp\ccvKOySj.s:340    .text.USBD_FS_ProductStrDescriptor:00000000 $t
+C:\Users\naoki\AppData\Local\Temp\ccvKOySj.s:346    .text.USBD_FS_ProductStrDescriptor:00000000 USBD_FS_ProductStrDescriptor
+C:\Users\naoki\AppData\Local\Temp\ccvKOySj.s:377    .text.USBD_FS_ProductStrDescriptor:00000014 $d
+C:\Users\naoki\AppData\Local\Temp\ccvKOySj.s:536    .bss.USBD_StrDesc:00000000 USBD_StrDesc
+C:\Users\naoki\AppData\Local\Temp\ccvKOySj.s:383    .rodata.USBD_FS_ManufacturerStrDescriptor.str1.4:00000000 $d
+C:\Users\naoki\AppData\Local\Temp\ccvKOySj.s:387    .text.USBD_FS_ManufacturerStrDescriptor:00000000 $t
+C:\Users\naoki\AppData\Local\Temp\ccvKOySj.s:393    .text.USBD_FS_ManufacturerStrDescriptor:00000000 USBD_FS_ManufacturerStrDescriptor
+C:\Users\naoki\AppData\Local\Temp\ccvKOySj.s:424    .text.USBD_FS_ManufacturerStrDescriptor:00000014 $d
+C:\Users\naoki\AppData\Local\Temp\ccvKOySj.s:430    .rodata.USBD_FS_ConfigStrDescriptor.str1.4:00000000 $d
+C:\Users\naoki\AppData\Local\Temp\ccvKOySj.s:434    .text.USBD_FS_ConfigStrDescriptor:00000000 $t
+C:\Users\naoki\AppData\Local\Temp\ccvKOySj.s:440    .text.USBD_FS_ConfigStrDescriptor:00000000 USBD_FS_ConfigStrDescriptor
+C:\Users\naoki\AppData\Local\Temp\ccvKOySj.s:471    .text.USBD_FS_ConfigStrDescriptor:00000014 $d
+C:\Users\naoki\AppData\Local\Temp\ccvKOySj.s:477    .rodata.USBD_FS_InterfaceStrDescriptor.str1.4:00000000 $d
+C:\Users\naoki\AppData\Local\Temp\ccvKOySj.s:481    .text.USBD_FS_InterfaceStrDescriptor:00000000 $t
+C:\Users\naoki\AppData\Local\Temp\ccvKOySj.s:487    .text.USBD_FS_InterfaceStrDescriptor:00000000 USBD_FS_InterfaceStrDescriptor
+C:\Users\naoki\AppData\Local\Temp\ccvKOySj.s:518    .text.USBD_FS_InterfaceStrDescriptor:00000014 $d
+C:\Users\naoki\AppData\Local\Temp\ccvKOySj.s:525    .data.USBD_StringSerial:00000000 $d
+C:\Users\naoki\AppData\Local\Temp\ccvKOySj.s:533    .bss.USBD_StrDesc:00000000 $d
+C:\Users\naoki\AppData\Local\Temp\ccvKOySj.s:540    .data.USBD_LangIDDesc:00000000 $d
+C:\Users\naoki\AppData\Local\Temp\ccvKOySj.s:547    .data.USBD_FS_DeviceDesc:00000000 $d
+C:\Users\naoki\AppData\Local\Temp\ccvKOySj.s:558    .data.FS_Desc:00000000 FS_Desc
+C:\Users\naoki\AppData\Local\Temp\ccvKOySj.s:555    .data.FS_Desc:00000000 $d
 
 UNDEFINED SYMBOLS
 g_boot_mode

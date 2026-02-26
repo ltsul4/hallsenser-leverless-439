@@ -45,9 +45,9 @@
   * @brief Constants.
   * @{
   */
-#define         DEVICE_ID1          (UID_BASE)
-#define         DEVICE_ID2          (UID_BASE + 0x4)
-#define         DEVICE_ID3          (UID_BASE + 0x8)
+#define         DEVICE_ID1          (0x1FFFF7AC)
+#define         DEVICE_ID2          (0x1FFFF7B0)
+#define         DEVICE_ID3          (0x1FFFF7B4)
 
 #define  USB_SIZ_STRING_SERIAL       0x1A
 
